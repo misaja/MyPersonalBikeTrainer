@@ -1,0 +1,291 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:screenOrientation="portrait"
+    tools:context="${relativePackage}.${activityClass}" >
+              
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="top">
+	
+	    <TextView android:id="@+id/lblStart"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valStart"
+	        android:textSize="18sp"
+	        android:text="@string/started" />
+	
+	    <TextView android:id="@+id/valStart"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    
+	</RelativeLayout>
+              
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="top">
+	
+	    <TextView android:id="@+id/lblEnd"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valEnd"
+	        android:textSize="18sp"
+	        android:text="@string/ended" />
+	
+	    <TextView android:id="@+id/valEnd"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    
+	</RelativeLayout>
+	
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="top">
+	
+	    <TextView android:id="@+id/lblElapsed"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valElapsed"
+	        android:textSize="18sp"
+	        android:text="@string/duration" />
+	    
+	    <TextView android:id="@+id/valElapsed"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    
+	</RelativeLayout>
+              
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="top">
+	    	
+	    <TextView android:id="@+id/lblDistance"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valDistance"
+	        android:textSize="18sp"
+	        android:text="@string/distance" />
+	
+	    <TextView android:id="@+id/valDistance"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    	    
+	</RelativeLayout>
+	
+	<View
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="#FF909090" />
+              
+	<TableLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="4"
+	    android:gravity="fill_vertical"
+	    android:stretchColumns="1" >
+	
+	    <TableRow>
+	    
+	       	<TextView
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content" />
+	        
+	       	<TextView
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right"
+		        android:text="@string/avg" />
+	        
+	       	<TextView
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right"
+		        android:text="@string/max" />
+	        
+	    </TableRow>
+	    
+	    <TableRow>
+	        
+	       	<TextView
+	       	    android:layout_width="wrap_content"
+	       	    android:layout_height="wrap_content"
+	       	    android:text="@string/cardio_bpm"
+	       	    android:textSize="18sp" />
+	       	
+		    <TextView android:id="@+id/valCardioAvg"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		
+		    <TextView android:id="@+id/valCardioMax"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		    
+	    </TableRow>
+	    
+	    <TableRow>
+	        
+	       	<TextView
+	       	    android:layout_width="wrap_content"
+	       	    android:layout_height="wrap_content"
+	       	    android:text="@string/speed_kmh"
+	       	    android:textSize="18sp" />
+		
+		    <TextView android:id="@+id/valSpeedAvg"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		
+		    <TextView android:id="@+id/valSpeedMax"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		    
+	    </TableRow>
+	    
+	    <TableRow>
+	        
+	       	<TextView
+	       	    android:layout_width="wrap_content"
+	       	    android:layout_height="wrap_content"
+	       	    android:text="@string/cadence_rpm"
+	       	    android:textSize="18sp" />
+	       	
+		    <TextView android:id="@+id/valCadenceAvg"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		
+		    <TextView android:id="@+id/valCadenceMax"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="18sp"
+		        android:padding="3dip"
+		        android:gravity="right" />
+		    
+	    </TableRow>
+	    	    	    
+	</TableLayout>
+              
+	
+	<View
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="#FF909090" />
+	
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="bottom">
+	    	
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valGear"
+	        android:textSize="18sp"
+	        android:text="@string/gear" />
+	
+	    <TextView android:id="@+id/valGear"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    	    
+	</RelativeLayout>
+              
+	<RelativeLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="1"
+	    android:gravity="bottom">
+	    	
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentLeft="true"
+	        android:layout_toLeftOf="@+id/valFitness"
+	        android:textSize="18sp"
+	        android:text="@string/fitness" />
+	
+	    <TextView android:id="@+id/valFitness"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentRight="true"
+	        android:textSize="18sp" />
+	    	    
+	</RelativeLayout>
+		
+	<LinearLayout
+        android:id="@+id/documento_twopane_buttons"
+        style="android:attr/buttonBarStyle"
+	    android:layout_width="match_parent"
+	    android:layout_height="0dp"
+	    android:layout_weight="2"
+	    android:gravity="bottom"
+        android:orientation="horizontal" >
+
+		<Button
+		    android:id="@+id/btnDelete"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+	        android:layout_height="wrap_content"
+		    style="?android:attr/buttonStyleSmall"
+	        android:textSize="24sp"
+	        android:text="@string/delete" />
+	
+		<Button
+		    android:id="@+id/btnOk"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+	        android:layout_height="wrap_content"
+		    style="?android:attr/buttonStyleSmall"
+	        android:textSize="24sp"
+	        android:text="@string/ok" />
+
+	</LinearLayout>
+					
+</LinearLayout>

@@ -1,0 +1,182 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" 
+    android:screenOrientation="portrait"
+    android:keepScreenOn="true"
+    tools:context="${relativePackage}.${activityClass}" >
+
+    <LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="50dp"
+        android:gravity="center_vertical"
+    	android:orientation="horizontal">
+    
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:textSize="20sp"
+	        android:text="@string/cardio_sensor" />
+	    
+	    <LinearLayout
+	        android:layout_width="0dip"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:gravity="right|center_vertical"
+	        android:orientation="horizontal" >
+	        
+			<ImageView
+			    android:id="@+id/imgCardio"
+			    android:layout_height="wrap_content"
+			    android:layout_width="wrap_content"
+			    android:contentDescription="@string/device_missing"
+			    android:src="@drawable/ic_action_cancel" />
+			
+	    	<Button
+			    android:id="@+id/btnSetCardio"
+				android:layout_width="wrap_content"
+		        android:layout_height="40sp"
+			    style="?android:attr/buttonStyleSmall"
+		        android:textSize="20sp"
+		        android:text="@string/set" />
+	    	
+    	</LinearLayout>
+	    
+	</LinearLayout>
+
+    <LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="50dp"
+        android:gravity="center_vertical"
+    	android:orientation="horizontal">
+    
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:textSize="20sp"
+	        android:text="@string/speed_sensor" />
+	    
+	    <LinearLayout
+	        android:layout_width="0dip"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:gravity="right|center_vertical"
+	        android:orientation="horizontal" >
+	        
+			<ImageView
+			    android:id="@+id/imgSpeed"
+			    android:layout_height="wrap_content"
+			    android:layout_width="wrap_content"
+			    android:contentDescription="@string/device_missing"
+			    android:src="@drawable/ic_action_cancel" />
+			
+	        <Button
+			    android:id="@+id/btnSetSpeed"
+				android:layout_width="wrap_content"
+		        android:layout_height="40sp"
+			    style="?android:attr/buttonStyleSmall"
+		        android:textSize="20sp"
+		        android:text="@string/set" />
+	    	
+    	</LinearLayout>
+	    
+	</LinearLayout>
+
+    <LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="50dp"
+        android:gravity="center_vertical"
+    	android:orientation="horizontal">
+    
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:textSize="20sp"
+	        android:text="@string/cadence_sensor" />
+	    
+	    <LinearLayout
+	        android:layout_width="0dip"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:gravity="right|center_vertical"
+	        android:orientation="horizontal" >
+	        
+			<ImageView
+			    android:id="@+id/imgCadence"
+			    android:layout_height="wrap_content"
+			    android:layout_width="wrap_content"
+			    android:contentDescription="@string/device_missing"
+			    android:src="@drawable/ic_action_cancel" />
+			
+	        <Button
+			    android:id="@+id/btnSetCadence"
+				android:layout_width="wrap_content"
+		        android:layout_height="40sp"
+			    style="?android:attr/buttonStyleSmall"
+		        android:textSize="20sp"
+		        android:text="@string/set" />
+	    	
+    	</LinearLayout>
+	    
+	</LinearLayout>
+    
+    <LinearLayout
+	    android:layout_width="match_parent"
+	    android:layout_height="50dp"
+        android:gravity="center_vertical"
+    	android:orientation="horizontal">
+    
+	    <TextView
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:textSize="20sp"
+	        android:text="@string/wheel_size" />
+	    
+	    <LinearLayout
+	        android:layout_width="0dip"
+	        android:layout_height="match_parent"
+	        android:layout_weight="1"
+	        android:gravity="right|center_vertical"
+	        android:orientation="horizontal" >
+	        
+		    <TextView
+			    android:id="@+id/txtWheelSize"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content"
+		        android:textSize="20sp" />
+	    
+	    	<Button
+			    android:id="@+id/btnSetWheel"
+				android:layout_width="wrap_content"
+		        android:layout_height="40sp"
+			    style="?android:attr/buttonStyleSmall"
+		        android:textSize="20sp"
+		        android:text="@string/set" />
+	    	
+    	</LinearLayout>
+	    
+	</LinearLayout>
+	
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:gravity="bottom"
+        android:orientation="horizontal" >
+    
+		<Button
+		    android:id="@+id/btnGo"
+			android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+		    style="?android:attr/buttonStyleSmall"
+	        android:textSize="24sp"
+	        android:text="@string/go" />
+	
+	</LinearLayout>
+	
+</LinearLayout>

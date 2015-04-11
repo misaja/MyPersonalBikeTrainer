@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.nimbusware.mypersonalbiketrainer"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="18"
+        android:targetSdkVersion="21" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <provider
+            android:name="com.nimbusware.mypersonalbiketrainer.db.DiaryContentProvider"
+            android:authorities="com.nimbusware.mypersonalbiketrainer.diary"
+            android:exported="false" />
+
+        <service
+            android:name=".WorkSessionService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <activity
+            android:name=".DiscoveryActivity"
+            android:label="@string/title_activity_discovery" >
+        </activity>
+        <activity
+            android:name=".CockpitActivity"
+            android:label="@string/title_activity_cockpit" >
+        </activity>
+        <activity
+            android:name=".SessionActivity"
+            android:label="@string/title_activity_session" >
+        </activity>
+        <activity
+            android:name=".DiaryActivity"
+            android:label="@string/title_activity_diary" >
+        </activity>
+    </application>
+
+</manifest>

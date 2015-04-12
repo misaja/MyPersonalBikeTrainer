@@ -82,7 +82,8 @@ public class DiaryActivity extends Activity implements LoaderManager.LoaderCallb
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_cockpit:
-				startActivity(CockpitActivity.getLauncher(this));
+				Intent intent = new Intent(this, CockpitActivity.class);
+				startActivity(intent);
 				break;
 			case R.id.action_settings:
 		        startActivity(new Intent(this, MainActivity.class));

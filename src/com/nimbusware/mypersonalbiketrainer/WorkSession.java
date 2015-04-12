@@ -11,7 +11,7 @@ public interface WorkSession {
 	public double getElapsedTimeSeconds();
 
 	public double getDistanceCoveredKms();
-
+	
 	public double getMaxSpeed();
 
 	public double getAverageSpeed();

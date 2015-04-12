@@ -3,17 +3,31 @@ package com.nimbusware.mypersonalbiketrainer;
 import java.util.Date;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
 public class WorkSessionService extends Service {
 	
 	private final static String TAG = WorkSessionService.class.getSimpleName();
+    private static final long MAX_SCAN_DURATION = 5000;
 	
 	private final IBinder mBinder = new LocalBinder();
-	
+
+    private final BluetoothAdapter.LeScanCallback mScanCallback =
+            new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(final BluetoothDevice sensor, int rssi, byte[] scanRecord) {
+        	Log.d(TAG, "Wakeup scan result: DEVICE=" + sensor.getName());
+        }
+    };
+    
 	private final SpeedSensorListener mWheelListener = new SpeedSensorListener() {
 		
 		@Override
@@ -53,17 +67,91 @@ public class WorkSessionService extends Service {
 		}
 	};
 	
+	private int mWheelSize;
+	private String mHeartSensorAddr;
+	private String mWheelSensorAddr;
+	private String mCrankSensorAddr;
 	private SensorSet mSensors;
+    private Handler mHandler = new Handler();
 	private WorkSessionData mSession = new WorkSessionData();
 	
-	public boolean isInitialized() {
-		return null != mSensors;
+	public void initSensors() {
+		if (null != mSensors) {
+			Log.d("MYDEBUG", "Closing sensors");
+			// if we already have sensors, it's a refresh request
+			mSensors.close(); // this also removes all previous listeners
+			mSensors = null;
+		}
+		
+        BluetoothManager manager = (BluetoothManager)
+        		getSystemService(Context.BLUETOOTH_SERVICE);
+        final BluetoothAdapter adapter = manager.getAdapter();
+        
+        // this is strongly advised by BLE doc before attempting connection
+		if (adapter.isDiscovering()) {
+	        Log.d(TAG, "Cancelling discovery");
+	        adapter.cancelDiscovery();
+		}
+
+		// sensor wakeup stuff: runs in background, stops scanning after some seconds
+		// note that this should not be necessary, but it seems it actually is
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+            	Log.d(TAG, "Aborting wakeup scan");
+            	adapter.stopLeScan(mScanCallback);
+            }
+        }, MAX_SCAN_DURATION);
+		Log.d("MYDEBUG", "Performing wakeup scan");
+    	adapter.startLeScan(mScanCallback);
+
+		Log.d(TAG, "Creating sensor set");
+        SensorInfo sensorInfo = new SensorInfo(mHeartSensorAddr,
+				mWheelSensorAddr, mCrankSensorAddr);
+		mSensors = SensorFactory.getSensorSet(this, adapter,
+				sensorInfo, mWheelSize);
+		
+		// this will span connection attempts in the background
+		Log.d("MYDEBUG", "Opening sensors");
+		mSensors.open();
 	}
 	
-	public void initialize(SensorSet sensors) {
-		Log.d(TAG, "Service is being initialized");
-		mSensors = sensors;
-		mSensors.open();
+	public void registerListeners(BeatRateSensorListener bsl,
+			SpeedSensorListener ssl, CadenceSensorListener csl) {
+		Log.d("MYDEBUG", "registerListeners called");
+		if (null != mSensors) {
+			Log.d("MYDEBUG", "Registering external listeners");
+			if (null != bsl) {
+				Log.d("MYDEBUG", "Registering external HRM listener");
+				mSensors.registerHeartListener(bsl);
+			}
+			if (null != ssl) {
+				Log.d("MYDEBUG", "Registering external Speed listener");
+				mSensors.registerWheelListener(ssl);
+			}
+			if (null != csl) {
+				Log.d("MYDEBUG", "Registering external Cadence listener");
+				mSensors.registerCrankListener(csl);
+			}
+		}
+	}
+	
+	public void unregisterListeners(BeatRateSensorListener bsl,
+			SpeedSensorListener ssl, CadenceSensorListener csl) {
+		if (null != mSensors) {
+			if (null != bsl) {
+				Log.d("MYDEBUG", "Unregistering external HRM listener");
+				mSensors.unregisterHeartListener(bsl);
+			}
+			if (null != ssl) {
+				Log.d("MYDEBUG", "Unregistering external Speed listener");
+				mSensors.unregisterWheelListener(ssl);
+			}
+			if (null != csl) {
+				Log.d("MYDEBUG", "Unregistering external Cadence listener");
+				mSensors.unregisterCrankListener(csl);
+			}
+		}
 	}
 	
 	public boolean isSessionRunning() {
@@ -99,30 +187,39 @@ public class WorkSessionService extends Service {
 	}
 
 	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		if (null != intent) {
+	        mHeartSensorAddr = intent.getStringExtra(Globals.HEART_SENSOR_ADDR);
+	        mWheelSensorAddr = intent.getStringExtra(Globals.WHEEL_SENSOR_ADDR);
+	        mCrankSensorAddr = intent.getStringExtra(Globals.CRANK_SENSOR_ADDR);
+	        mWheelSize = intent.getIntExtra(Globals.WHEEL_SIZE, 0);
+		}
+		return super.onStartCommand(intent, flags, startId);
+	}
+
+	@Override
 	public IBinder onBind(Intent intent) {
 		Log.d(TAG, "Binding service");
 		return mBinder;
 	}
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-		Log.d(TAG, "Unbinding service");
-    	mSession.stop();
-    	if (null != mSensors) {
-    		Log.d(TAG, "Closing sensors");
-    		mSensors.close();
-    		mSensors = null;
-    	}
-        return super.onUnbind(intent);
-    }
 	
+	@Override
+	public void onDestroy() {
+		Log.d(TAG, "Destroying service");
+		if (null != mSensors) {
+			// if we already have sensors, it's a refresh request
+			mSensors.close(); // this also removes all previous listeners
+			mSensors = null;
+		}
+		super.onDestroy();
+	}
+
 	public class LocalBinder extends Binder {
 		WorkSessionService getService() {
 			return WorkSessionService.this;
 		}
 	}
-	
-
+    
 	static class WorkSessionData implements WorkSession {
 		
 		private static final Date NEVER = new Date(0);

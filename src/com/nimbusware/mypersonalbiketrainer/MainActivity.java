@@ -22,12 +22,15 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
@@ -44,6 +47,7 @@ public class MainActivity extends Activity {
 	
 	private static final String TAG = MainActivity.class.getSimpleName();
 
+    
 	private BluetoothAdapter mAdapter;
 
 	private ImageView mCardioIcon;
@@ -57,16 +61,29 @@ public class MainActivity extends Activity {
 	private String mWheelSensorAddr;
 	private String mCrankSensorAddr;
 
-    @Override
+	private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder service) {
+        	Log.d(TAG, "Connecting to service");
+        	WorkSessionService wsservice = ((WorkSessionService.LocalBinder) service).getService();
+        	wsservice.initSensors();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+        	Log.d(TAG, "Disconnecting from service");
+        }
+    };
+
+	@Override
     protected void onCreate(Bundle savedInstanceState) {
+    	Log.d(TAG, "Creating activity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // override manifest, as this is the launcher and as such it has
         // the app name as the label
         setTitle(R.string.title_activity_settings);
-        
-    	Log.d(TAG, "Creating activity");
     	
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
         	Log.w(TAG, "No Bluetooth LE support detected on device: exiting");
@@ -89,7 +106,6 @@ public class MainActivity extends Activity {
         mWheelSizeText = (TextView) findViewById(R.id.txtWheelSize);
         mGoButton = (Button) findViewById(R.id.btnGo);
         
-        
     	Log.d(TAG, "Loading saved settings");
         SharedPreferences prefs = getSharedPreferences(MainActivity.class.getSimpleName(), MODE_PRIVATE);
         mHeartSensorAddr = prefs.getString(Globals.HEART_SENSOR_ADDR, null);
@@ -103,8 +119,6 @@ public class MainActivity extends Activity {
         buf.append(", CRANK_SENSOR_ADDR=").append(mCrankSensorAddr);
         buf.append(", WHEEL_SIZE=").append(mWheelSize);
     	Log.i(TAG, "Saved settings: " + buf.toString());
-    	
-    	Log.d(TAG, "Activity successfully started");
 
     	findViewById(R.id.btnSetCardio).setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -144,11 +158,22 @@ public class MainActivity extends Activity {
         mGoButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				startActivity(CockpitActivity.getLauncher(MainActivity.this));
+				Intent serviceIntent = new Intent(MainActivity.this, WorkSessionService.class);
+				serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
+				serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
+				serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
+				serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
+				startService(serviceIntent);
+				
+				if (bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE)) {
+					Intent intent = new Intent(MainActivity.this, CockpitActivity.class);
+					startActivity(intent);
+				} else {
+					Toast.makeText(MainActivity.this, "Unable to start!", Toast.LENGTH_SHORT).show();
+				}
+				
 			}
 		});
-        
-    	Log.d(TAG, "Activity successfully created");
     }
 
 	@Override
@@ -162,7 +187,8 @@ public class MainActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_cockpit:
-				startActivity(CockpitActivity.getLauncher(this));
+				Intent intent = new Intent(this, CockpitActivity.class);
+				startActivity(intent);
 				break;
 			case R.id.action_diary:
 		        startActivity(new Intent(this, DiaryActivity.class));
@@ -173,9 +199,8 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onResume() {
-		super.onResume();
-
     	Log.d(TAG, "Resuming activity");
+		super.onResume();
     	
         if (!mAdapter.isEnabled()) {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -184,10 +209,15 @@ public class MainActivity extends Activity {
         }
 
         refreshUI();
-		
-    	Log.d(TAG, "Activity successfully resumed");
 	}
 	
+	@Override
+	protected void onDestroy() {
+    	Log.d(TAG, "Destroying activity");
+		unbindService(mServiceConnection);
+		super.onDestroy();
+	}
+
 	private void refreshUI() {
     	mGoButton.setEnabled(false);
         

@@ -79,7 +79,8 @@ public class SessionActivity extends Activity {
 		ok.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				startActivity(CockpitActivity.getLauncher(SessionActivity.this));
+				Intent intent = new Intent(SessionActivity.this, CockpitActivity.class);
+				startActivity(intent);
 			}
 		});
         
@@ -97,7 +98,8 @@ public class SessionActivity extends Activity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_cockpit:
-				startActivity(CockpitActivity.getLauncher(this));
+				Intent intent = new Intent(this, CockpitActivity.class);
+				startActivity(intent);
 				break;
 			case R.id.action_diary:
 		        startActivity(new Intent(this, DiaryActivity.class));

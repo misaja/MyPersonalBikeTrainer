@@ -2,15 +2,29 @@ package com.nimbusware.mypersonalbiketrainer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
+import java.util.Locale;
 
-public class Globals {
+import android.app.Application;
+import android.content.Context;
+import android.net.Uri;
+
+/**
+ * Provides common constants and utility methods. It also
+ * extends android.app.Application, providing a convenient
+ * way for getting the ApplicationContext object from anywhere.
+ * 
+ * @author misaja
+ *
+ */
+public class Globals extends Application {
 
 	public static final String SENSOR_ADDR = "SENSOR_ADDR";
 	public static final String HEART_SENSOR_ADDR = "HEART_SENSOR_ADDR";
 	public static final String WHEEL_SENSOR_ADDR = "WHEEL_SENSOR_ADDR";
 	public static final String CRANK_SENSOR_ADDR = "CRANK_SENSOR_ADDR";
 	public static final String WHEEL_SIZE = "WHEEL_SIZE";
-	public static final String SESSION_ID = "SESSION_ID";
+	public static final String WORKOUT_ID = "WORKOUT_ID";
 	public static final int WHEEL_SIZE_DEFAULT = 1800;
 	public static final int WHEEL_SIZE_MIN = 1000;
 	public static final int WHEEL_SIZE_MAX = 3000;
@@ -19,11 +33,14 @@ public class Globals {
 	public static final int REQ_DISCOVER_CARDIO_SENSOR = 2;
 	public static final int REQ_DISCOVER_SPEED_SENSOR = 3;
 	public static final int REQ_DISCOVER_CADENCE_SENSOR = 4;
+	public static final Date NEVER = new Date(0);
 	
 	private static final int BLE_WAIT_TIME = 100;
 	private static final BigDecimal ZEROTWOFIVE = new BigDecimal("0.25");
 	private static final BigDecimal ZEROSEVENFIVE = new BigDecimal("0.75");
 	private static final BigDecimal ZEROFIVE = new BigDecimal("0.50");
+	
+	private static Context CONTEXT;
 	
 	/**
 	 * Returns the argument rounded to one decimal position
@@ -87,5 +104,35 @@ public class Globals {
 		}
 	}
 	
-	private Globals() {}
+	public static String getTimeSpanStringFromSecs(long secs) {
+		return getTimeSpanStringFromMillis(secs * 1000);
+	}
+	
+	public static String getTimeSpanStringFromMillis(long millis) {
+        int hours = (int) ((millis / (1000 * 60 * 60)));
+        int minutes = (int) ((millis / (1000 * 60)) % 60);
+        int seconds = (int) ((millis / 1000) % 60);
+        return String.format(Locale.getDefault(),
+        		"%d:%02d:%02d", hours, minutes, seconds);
+    }
+	
+	public static String getWorkoutContentUri(long workoutId) {
+		Uri.Builder builder = new Uri.Builder();
+		return builder.scheme(Globals.class.getPackage().getName())
+			.appendPath(DiaryContract.WORKOUTS)
+			.appendPath(String.valueOf(workoutId))
+			.toString();
+	}
+	
+	public static Context getContext() {
+		return CONTEXT;
+	}
+
+	@Override
+	public void onCreate() {
+		CONTEXT = getApplicationContext();
+		super.onCreate();
+	}
+	
+	
 }

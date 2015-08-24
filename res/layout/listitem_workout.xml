@@ -1,22 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:baselineAligned="true"
-    android:orientation="horizontal" >
+    android:layout_height="match_parent" >
 
     <TextView
         android:id="@+id/start"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:textSize="24sp" />
+        android:layout_height="40dp"
+        android:layout_alignParentStart="true"
+        android:paddingStart="10dp"
+        android:paddingEnd="3dp"
+        android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/distance"
+        android:id="@+id/duration"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="10dp"
-        android:textSize="24sp" />
+        android:layout_height="40dp"
+        android:layout_toStartOf="@+id/distance"
+        android:layout_alignBaseline="@id/start"
+        android:layout_gravity="end"
+        android:gravity="end"
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp"
+        android:textSize="20sp" />
+    
+    <TextView
+        android:id="@id/distance"
+        android:layout_width="120dp"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@id/duration"
+        android:layout_gravity="end"
+        android:gravity="end"
+        android:paddingStart="3dp"
+        android:paddingEnd="10dp"
+        android:textSize="20sp" />
 
-</LinearLayout>
+</RelativeLayout>

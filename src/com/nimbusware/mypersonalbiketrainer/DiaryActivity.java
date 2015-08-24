@@ -22,7 +22,12 @@ import android.widget.TextView;
 
 public class DiaryActivity extends Activity implements LoaderManager.LoaderCallbacks<Cursor> {
 	
-	private static String[] PROJECTION = { DiaryContract.COL_START, DiaryContract.COL_DISTANCE, DiaryContract._ID };
+	private static String[] PROJECTION = {
+		DiaryContract.COL_START, 
+		DiaryContract.COL_ELAPSED, 
+		DiaryContract.COL_DISTANCE, 
+		DiaryContract._ID
+	};
 
 	private SimpleCursorAdapter mAdapter;
 
@@ -32,23 +37,28 @@ public class DiaryActivity extends Activity implements LoaderManager.LoaderCallb
 		setContentView(R.layout.activity_diary);
 		
 		mAdapter = new SimpleCursorAdapter(
-				this, R.layout.listitem_workout, null,
-				PROJECTION,	new int[] { R.id.start, R.id.distance }, 0);
+				this, R.layout.listitem_workout, null, PROJECTION,
+				new int[] { R.id.start, R.id.duration, R.id.distance }, 0);
 		
 		mAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
 		    @Override
 		    public boolean setViewValue(View view, Cursor cursor, int column) {
 		        if (column == 0) { // COL_START
 		            TextView tv = (TextView) view;
-					DateFormat formatter = DateFormat.getDateTimeInstance();
+					DateFormat formatter = DateFormat.getDateInstance();
 		            Date start = new Date(cursor.getLong(cursor.getColumnIndex(DiaryContract.COL_START)));
 		            tv.setText(formatter.format(start));
 		            return true;
-		        } else if (column == 1) { // COL_DISTANCE
+		        } else if (column == 1) { // COL_ELAPSED
+		            TextView tv = (TextView) view;
+		            double elapsed = cursor.getDouble(cursor.getColumnIndex(DiaryContract.COL_ELAPSED));
+		            tv.setText(Globals.getTimeSpanStringFromSecs((long)elapsed));
+		            return true;
+		        } else if (column == 2) { // COL_DISTANCE
 		            TextView tv = (TextView) view;
 		            DecimalFormat formatter = new DecimalFormat("#0.0");   
 		            double distance = cursor.getDouble(cursor.getColumnIndex(DiaryContract.COL_DISTANCE));
-		            tv.setText(formatter.format(distance));
+		            tv.setText(formatter.format(distance) + " km");
 		            return true;
 		        } else {
 		        	return false;
@@ -63,7 +73,7 @@ public class DiaryActivity extends Activity implements LoaderManager.LoaderCallb
 			@Override
 			public void onItemClick(AdapterView<?> av, View v, int position, long id) {
 		        Intent intent = new Intent(DiaryActivity.this, SessionActivity.class);
-		        intent.putExtra(Globals.SESSION_ID, id);
+		        intent.putExtra(Globals.WORKOUT_ID, id);
 		        startActivity(intent);
 			}
 		});
@@ -94,7 +104,7 @@ public class DiaryActivity extends Activity implements LoaderManager.LoaderCallb
 
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return new CursorLoader(this, DiaryContract.CONTENT_URI, PROJECTION, null, null, null);
+		return new CursorLoader(this, DiaryContract.WORKOUTS_URI, PROJECTION, null, null, null);
 	}
 
 	@Override

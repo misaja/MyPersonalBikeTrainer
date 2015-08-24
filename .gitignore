@@ -49,3 +49,4 @@ proguard-project.txt
 
 # Log Files
 *.log
+/libs/

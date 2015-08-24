@@ -123,13 +123,13 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 			    Log.d(TAG, "Sending CSC wheel sensor notification");
 		    	listener.updateSpeed(speed);
 		    	listener.updateDistance(distance);
-		    	listener.updateRevolutions(actualWheelRevs);
+		    	listener.updateWheelRevsCount(actualWheelRevs);
 		    }
 		    
 		    for (CadenceSensorListener listener : mCadenceListeners) {
 			    Log.d(TAG, "Sending CSC crank sensor notification");
-		    	listener.updateBeatRate(cadence);
-		    	listener.updateRevolutions(actualCrankRevs);
+		    	listener.updateCadence(cadence);
+		    	listener.updateCrankRevsCount(actualCrankRevs);
 		    }
 		    
 		    mLastCSCReading = newReading;

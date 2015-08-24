@@ -1,20 +1,42 @@
 package com.nimbusware.mypersonalbiketrainer;
 
-import android.content.ContentValues;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+/**
+ * Front-end to the DiaryContentProvider.
+ * @author misaja
+ *
+ */
 public class DiaryContract {
 
 	public static final String AUTHORITY = DiaryContract.class.getPackage().getName() + ".diary";
+	
 	public static final String WORKOUTS = "workouts";
-	public static final String URL = "content://" + AUTHORITY + "/" + WORKOUTS;
-	public static final Uri CONTENT_URI = Uri.parse(URL);
+	public static final String WORKOUTS_URI_STR = "content://" + AUTHORITY + "/" + WORKOUTS;
+	public static final Uri WORKOUTS_URI = Uri.parse(WORKOUTS_URI_STR);
+
+	// sessions are an alias to workouts: we use a sessions content uri when
+	// we are addressing a workout by its UUID instead of its _ID
+	public static final String SESSIONS = "sessions";
+	public static final String SESSIONS_URI_STR = "content://" + AUTHORITY + "/" + SESSIONS;
+	public static final Uri SESSIONS_URI = Uri.parse(SESSIONS_URI_STR);
+
+	// log entries are details records of a workout/session
+	public static final String LOG = "log";
 
 	public static String _ID = "_id";
+	public static String COL_UUID = "_uuid";
 	public static String COL_START = "start_time";
 	public static String COL_END = "end_time";
-	public static String COL_ELAPSED = "time_elapses";
+	public static String COL_ELAPSED = "time_elapses"; // typo, too late to amend
 	public static String COL_DISTANCE = "distance";
 	public static String COL_CARDIO_MAX = "cardio_max";
 	public static String COL_CARDIO_AVG = "cardio_avg";
@@ -24,10 +46,15 @@ public class DiaryContract {
 	public static String COL_CADENCE_AVG = "cadence_avg";
 	public static String COL_GEAR = "gear_ratio_avg";
 	public static String COL_FITNESS = "fitness_factor";
+
+	public static String COL_WORKOUT = "workout"; // fk, references workout._id
+	public static String COL_CARDIO = "cardio";
+	public static String COL_SPEED = "speed";
+	public static String COL_CADENCE = "cadence";
 	
-	
-	public static final String[] PROJECTION = {
+	public static final String[] WORKOUT_PROJECTION = {
 		_ID,
+		COL_UUID,
 		COL_START,
 		COL_END,
 		COL_ELAPSED,
@@ -42,28 +69,235 @@ public class DiaryContract {
 		COL_FITNESS
 	};
 	
-	public static ContentValues getValues(Cursor cursor) {
-		ContentValues values = null;
-	    if (cursor != null) {
-	    	cursor.moveToFirst();
-	    	values = new ContentValues();
-			values.put(_ID, cursor.getLong(cursor.getColumnIndex(_ID)));
-			values.put(COL_START, cursor.getLong(cursor.getColumnIndex(COL_START)));
-			values.put(COL_END, cursor.getLong(cursor.getColumnIndex(COL_END)));
-			values.put(COL_ELAPSED, cursor.getDouble(cursor.getColumnIndex(COL_ELAPSED)));
-			values.put(COL_DISTANCE, cursor.getDouble(cursor.getColumnIndex(COL_DISTANCE)));
-			values.put(COL_CARDIO_MAX, cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_MAX)));
-			values.put(COL_CARDIO_AVG, cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_AVG)));
-			values.put(COL_SPEED_MAX, cursor.getDouble(cursor.getColumnIndex(COL_SPEED_MAX)));
-			values.put(COL_SPEED_AVG, cursor.getDouble(cursor.getColumnIndex(COL_SPEED_AVG)));
-			values.put(COL_CADENCE_MAX, cursor.getDouble(cursor.getColumnIndex(COL_CADENCE_MAX)));
-			values.put(COL_CADENCE_AVG, cursor.getDouble(cursor.getColumnIndex(COL_CADENCE_AVG)));
-			values.put(COL_GEAR, cursor.getDouble(cursor.getColumnIndex(COL_GEAR)));
-			values.put(COL_FITNESS, cursor.getDouble(cursor.getColumnIndex(COL_FITNESS)));
+	public static final String[] LOG_PROJECTION = {
+		_ID,
+		COL_WORKOUT,
+		COL_DISTANCE,
+		COL_CARDIO,
+		COL_SPEED,
+		COL_CADENCE
+	};
+	
+	public static Uri getWorkoutUri(long workoutId) {
+		return ContentUris.withAppendedId(DiaryContract.WORKOUTS_URI, workoutId);
+	}
+	
+	public static Uri getWorkoutLogContentUri(long workoutId) {
+		return Uri.withAppendedPath(getWorkoutUri(workoutId), LOG);
+	}
+	
+	public static Uri getSessionUri(String sessionId) {
+		return Uri.withAppendedPath(SESSIONS_URI, sessionId);
+	}
+	
+	public static WorkSessionInfo getWorkoutEntry(Context ctx, long workoutId) {
+		ContentResolver cs = ctx.getContentResolver();
+		Uri uri = getWorkoutUri(workoutId);
+		Cursor cursor = cs.query(uri, WORKOUT_PROJECTION, null, null, null);
+		return getWorkoutEntry(cursor);
+	}
+	
+	public static WorkSessionInfo getWorkoutEntry(Cursor cursor) {
+		WSData item = null;
+	    if (cursor != null && cursor.moveToFirst()) {
+	    	item = new WSData();
+			item.mLocalId = cursor.getLong(cursor.getColumnIndex(_ID));
+			item.mUniqueId = cursor.getString(cursor.getColumnIndex(COL_UUID));
+			item.mStartTime = new Date(cursor.getLong(cursor.getColumnIndex(COL_START)));
+			item.mEndTime = new Date(cursor.getLong(cursor.getColumnIndex(COL_END)));
+			item.mElapsedTime = cursor.getDouble(cursor.getColumnIndex(COL_ELAPSED));
+			item.mDistanceCovered = cursor.getDouble(cursor.getColumnIndex(COL_DISTANCE));
+			item.mMaxHeartCadence = cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_MAX));
+			item.mAverageHeartCadence = cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_AVG));
+			item.mMaxSpeed = cursor.getDouble(cursor.getColumnIndex(COL_SPEED_MAX));
+			item.mAverageSpeed = cursor.getDouble(cursor.getColumnIndex(COL_SPEED_AVG));
+			item.mMaxCrankCadence = cursor.getDouble(cursor.getColumnIndex(COL_CADENCE_MAX));
+			item.mAverageCrankCadence = cursor.getDouble(cursor.getColumnIndex(COL_CADENCE_AVG));
+			item.mAverageGearRatio = cursor.getDouble(cursor.getColumnIndex(COL_GEAR));
+			item.mCardioFitnessFactor = cursor.getDouble(cursor.getColumnIndex(COL_FITNESS));
 	    } 
-	    return values;
+	    return item;
+	}
+	
+	public static boolean deleteWorkoutEntry(Context ctx, long workoutId) {
+		ContentResolver cs = ctx.getContentResolver();
+		Uri uri = getWorkoutUri(workoutId);
+		return (1 == cs.delete(uri, null, null));
+	}
+	
+	public static List<WorkSessionLogEntry> getWorkoutLogEntries(Context ctx, long workoutId) {
+		ContentResolver cs = ctx.getContentResolver();
+		Uri uri = getWorkoutLogContentUri(workoutId);
+		Cursor cursor = cs.query(uri, LOG_PROJECTION, null, null, null);
+		return getWorkoutLogEntries(cursor);
+	}
+	
+	public static List<WorkSessionLogEntry> getWorkoutLogEntries(Cursor cursor) {
+		ArrayList<WorkSessionLogEntry> items = 
+				new ArrayList<WorkSessionLogEntry>();
+	    if (cursor != null) {
+	    	while (cursor.moveToNext()) {
+		    	WSLogData item = new WSLogData();
+		    	item.mTime = new Date(cursor.getLong(cursor.getColumnIndex(_ID)));
+		    	item.mWorkoutLocalId = cursor.getLong(cursor.getColumnIndex(COL_WORKOUT));
+		    	item.mPartialDistance = cursor.getDouble(cursor.getColumnIndex(COL_DISTANCE));
+		    	item.mHeartCadence = cursor.getDouble(cursor.getColumnIndex(COL_CARDIO));
+		    	item.mSpeed = cursor.getDouble(cursor.getColumnIndex(COL_SPEED));
+		    	item.mCrankCadence = cursor.getDouble(cursor.getColumnIndex(COL_CADENCE));
+		    	items.add(item);
+	    	}
+	    } 
+	    return items;
 	}
 
 	
 	private DiaryContract() {}
+	
+	
+	private static class WSData implements WorkSessionInfo {
+		
+		private long mLocalId;
+		private String mUniqueId;
+		private Date mStartTime;
+		private Date mEndTime;
+		private double mElapsedTime;
+		private double mDistanceCovered;
+		private int mWheelRevs;
+		private int mCrankRevs;
+		private double mHeartBeats;
+		private double mMaxSpeed;
+		private double mMaxCrankCadence;
+		private double mMaxHeartCadence;
+		private double mAverageSpeed;
+		private double mAverageCrankCadence;
+		private double mAverageHeartCadence;
+		private double mAverageGearRatio;
+		private double mCardioFitnessFactor;
+
+		@Override
+		public long getLocalId() {
+			return mLocalId;
+		}
+		
+		@Override
+		public String getUniqueId() {
+			return mUniqueId;
+		}
+
+		@Override
+		public Date getStartTime() {
+			return mStartTime;
+		}
+		
+		@Override
+		public Date getEndTime() {
+			return mEndTime;
+		}
+		
+		@Override
+		public double getDistanceCovered() {
+			return mDistanceCovered / 1000d;
+		}
+		
+		@Override
+		public int getWheelRevs() {
+			return mWheelRevs;
+		}
+		
+		@Override
+		public int getCrankRevs() {
+			return mCrankRevs;
+		}
+
+		@Override
+		public double getHeartBeats() {
+			return mHeartBeats;
+		}
+		
+		@Override
+		public double getMaxSpeed() {
+			return mMaxSpeed;
+		}
+
+		@Override
+		public double getMaxCrankCadence() {
+			return mMaxCrankCadence;
+		}
+
+		@Override
+		public double getMaxHeartCadence() {
+			return mMaxHeartCadence;
+		}
+		
+		@Override
+		public double getElapsedTime() {
+			return mElapsedTime;
+		}
+		
+		@Override
+		public double getAverageSpeed() {
+			return mAverageSpeed;
+		}
+		
+		@Override
+		public double getAverageCrankCadence() {
+			return mAverageCrankCadence;
+		}
+		
+		@Override
+		public double getAverageGearRatio() {
+			return mAverageGearRatio;
+		}
+		
+		@Override
+		public double getAverageHeartCadence() {
+			return mAverageHeartCadence;
+		}
+		
+		@Override
+		public double getCardioFitnessFactor() {
+			return mCardioFitnessFactor;
+		}
+	}
+	
+	private static class WSLogData implements WorkSessionLogEntry {
+
+		private long mWorkoutLocalId;
+		private Date mTime;
+		private double mPartialDistance;
+		private double mSpeed;
+		private double mCrankCadence;
+		private double mHeartCadence;
+		
+		@Override
+		public long getWorkoutLocalId() {
+			return mWorkoutLocalId;
+		}
+
+		@Override
+		public Date getTime() {
+			return mTime;
+		}
+
+		@Override
+		public double getPartialDistance() {
+			return mPartialDistance;
+		}
+
+		@Override
+		public double getSpeed() {
+			return mSpeed;
+		}
+
+		@Override
+		public double getCrankCadence() {
+			return mCrankCadence;
+		}
+
+		@Override
+		public double getHeartCadence() {
+			return mHeartCadence;
+		}
+		
+	}
 }

@@ -1,167 +1,137 @@
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" 
-    android:screenOrientation="portrait"
     android:keepScreenOn="true"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
     tools:context="${relativePackage}.${activityClass}" >
               
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="1">
-	
-	    <TextView android:id="@+id/lblCardio"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/valCardio"
-	        android:textSize="24sp"
-	        android:text="@string/cardio" />
-	
-	    <TextView android:id="@+id/valCardio"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/lblBpm"
-	        android:textSize="48sp" />
-	
-	    <TextView android:id="@+id/lblBpm"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentRight="true"
-	        android:layout_alignParentBottom="true"
-	        android:textSize="24sp"
-	        android:gravity="bottom" />
-	    	    
-	</RelativeLayout>
-              
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="1">
-	
-	    <TextView android:id="@+id/lblSpeed"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/valSpeed"
-	        android:textSize="24sp"
-	        android:gravity="bottom"
-	        android:text="@string/speed" />
-	
-	    <TextView android:id="@+id/valSpeed"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/lblKmh"
-	        android:textSize="48sp" />
-	
-	    <TextView android:id="@+id/lblKmh"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentRight="true"
-	        android:layout_alignParentBottom="true"
-	        android:textSize="24sp"
-	        android:gravity="bottom" />
-	    	    
-	</RelativeLayout>
-              
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="1">
-	
-	    <TextView android:id="@+id/lblCadence"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/valCadence"
-	        android:textSize="24sp"
-	        android:text="@string/cadence" />
-	
-	    <TextView android:id="@+id/valCadence"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentBottom="true"
-	        android:layout_toLeftOf="@+id/lblRpm"
-	        android:textSize="48sp" />
-	
-	    <TextView android:id="@+id/lblRpm"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentRight="true"
-	        android:layout_alignParentBottom="true"
-	        android:textSize="24sp"
-	        android:gravity="bottom" />
-	    	    
-	</RelativeLayout>
-              
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="4"
-	    android:gravity="bottom">
-	
-	    <TextView android:id="@+id/lblElapsed"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_toLeftOf="@+id/chronometer"
-	        android:textSize="24sp"
-	        android:text="@string/time" />
-	    
-	    <TextView android:id="@+id/chronometer"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentRight="true"
-	        android:textSize="48sp" />
-	    
-	</RelativeLayout>
-              
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="1"
-	    android:gravity="bottom">
-	    	
-	    <TextView android:id="@+id/lblDistance"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentLeft="true"
-	        android:layout_toLeftOf="@+id/valDistance"
-	        android:textSize="24sp"
-	        android:text="@string/distance" />
-	
-	    <TextView android:id="@+id/valDistance"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:layout_alignParentRight="true"
-	        android:textSize="48sp" />
-	    	    
-	</RelativeLayout>
-              
-	<RelativeLayout
-	    android:layout_width="match_parent"
-	    android:layout_height="0dp"
-	    android:layout_weight="2"
-	    android:gravity="bottom">
-	
-		<Button
-		    android:id="@+id/btnStartStop"
-			android:layout_width="match_parent"
-	        android:layout_height="wrap_content"
-		    style="?android:attr/buttonStyleSmall"
-	        android:textSize="24sp"
-	        android:text="@string/start" />
-	    
-	</RelativeLayout>
+    <!-- CARDIO -->
+    <TextView android:id="@+id/lblCardio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+		android:layout_alignBaseline="@+id/valCardio"
+        android:textSize="24sp"
+        android:text="@string/cardio" />
+
+    <TextView android:id="@id/valCardio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp"
+        android:layout_toStartOf="@+id/lblBpm"
+        android:textSize="80sp" />
+
+    <TextView android:id="@id/lblBpm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+		android:layout_alignBaseline="@id/valCardio"
+        android:textSize="24sp" />
+            
+    <!-- SPEED -->
+    <TextView android:id="@+id/lblSpeed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/lblCardio"
+		android:layout_alignBaseline="@+id/valSpeed"
+        android:textSize="24sp"
+        android:text="@string/speed" />
+
+    <TextView android:id="@id/valSpeed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/valCardio"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp"
+        android:layout_toStartOf="@+id/lblKmh"
+        android:textSize="60sp" />
+
+    <TextView android:id="@id/lblKmh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lblBpm"
+        android:layout_alignParentEnd="true"
+		android:layout_alignBaseline="@id/valSpeed"
+        android:textSize="24sp" />
+            
+    <!-- CADENCE -->
+    <TextView android:id="@+id/lblCadence"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/lblSpeed"
+		android:layout_alignBaseline="@+id/valCadence"
+        android:textSize="24sp"
+        android:text="@string/cadence" />
+
+    <TextView android:id="@id/valCadence"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/valSpeed"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp"
+        android:layout_toStartOf="@+id/lblRpm"
+        android:textSize="60sp" />
+
+    <TextView android:id="@id/lblRpm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lblKmh"
+        android:layout_alignParentEnd="true"
+		android:layout_alignBaseline="@id/valCadence"
+        android:textSize="24sp" />
+
+    <!-- TIME -->
+    <TextView android:id="@+id/lblElapsed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/lblDistance"
+		android:layout_alignBaseline="@+id/chronometer"
+        android:textSize="24sp"
+        android:text="@string/time" />
+    
+    <TextView android:id="@id/chronometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@+id/valDistance"
+        android:textSize="36sp" />
+      
+    <!-- DISTANCE -->
+    <TextView android:id="@id/lblDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btnStartStop"
+		android:layout_alignBaseline="@id/valDistance"
+        android:textSize="24sp"
+        android:text="@string/distance" />
+
+    <TextView android:id="@id/valDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/btnStartStop"
+        android:paddingTop="5dp"
+        android:paddingBottom="20dp"
+        android:textSize="36sp" />
+
+    <!-- START -->
+    <Button
+	    android:id="@id/btnStartStop"
+		android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+	    style="?android:attr/buttonStyleSmall"
+        android:textSize="24sp"
+        android:text="@string/start" />
 					
-</LinearLayout>
+</RelativeLayout>

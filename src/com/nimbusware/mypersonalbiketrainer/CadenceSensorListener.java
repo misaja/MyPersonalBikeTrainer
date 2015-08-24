@@ -1,6 +1,8 @@
 package com.nimbusware.mypersonalbiketrainer;
 
-public interface CadenceSensorListener
-extends BeatRateSensorListener, RevolutionSensorListener {
-	// just a convenience interface to aggregate multiple interfaces
+public interface CadenceSensorListener {
+
+	public void updateCadence(double rpm);
+
+	public void updateCrankRevsCount(int revs);
 }

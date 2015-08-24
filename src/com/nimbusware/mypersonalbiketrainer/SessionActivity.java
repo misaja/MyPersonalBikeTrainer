@@ -1,18 +1,16 @@
 package com.nimbusware.mypersonalbiketrainer;
 
 import java.text.DateFormat;
-import java.util.Date;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
-import android.content.ContentUris;
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,16 +22,23 @@ import android.widget.TextView;
 public class SessionActivity extends Activity {
 	
 	private static final String TAG = SessionActivity.class.getSimpleName();
+	private static final String PLACEHOLDER_LINK = "!!!";
+	private static final String PLACEHOLDER_TEXT = "???";
+	private static final String TEMPLATE = "<a href='" + 
+			PLACEHOLDER_LINK +  "'>" + PLACEHOLDER_TEXT + "</a>";
 
-	private long mSessionId;
+	private long mWorkoutId;
 	private TextView mStarted;
 	private TextView mEnded;
 	private TextView mDuration;
 	private TextView mDistance;
+	private TextView mCardio;
 	private TextView mCardioAvg;
 	private TextView mCardioMax;
+	private TextView mSpeed;
 	private TextView mSpeedAvg;
 	private TextView mSpeedMax;
+	private TextView mCadence;
 	private TextView mCadenceAvg;
 	private TextView mCadenceMax;
 	private TextView mGear;
@@ -44,23 +49,40 @@ public class SessionActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_session);
 		
-		mSessionId = getIntent().getLongExtra(Globals.SESSION_ID, -1);
-		if (mSessionId < 0) {
-        	Log.e(TAG, "Bad session ID, exiting");
+		mWorkoutId = getIntent().getLongExtra(Globals.WORKOUT_ID, -1);
+		if (mWorkoutId < 0) {
+        	Log.e(TAG, "Bad Workout ID, exiting");
         	finish();
         	return;
 		}
 		
-		Log.d(TAG, "Creating activity, SESSION_ID=" + mSessionId);
+		Log.d(TAG, "Creating activity, Workout ID=" + mWorkoutId);
+		
+		String link = Globals.getWorkoutContentUri(mWorkoutId) ;
 		
 		mStarted = (TextView) findViewById(R.id.valStart);
 		mEnded = (TextView) findViewById(R.id.valEnd);
 		mDuration = (TextView) findViewById(R.id.valElapsed);
 		mDistance = (TextView) findViewById(R.id.valDistance);
+		mCardio = (TextView) findViewById(R.id.lblCardio);
+		mCardio.setMovementMethod(LinkMovementMethod.getInstance());
+		String htmlText = TEMPLATE.replace(PLACEHOLDER_TEXT, mCardio.getText())
+				.replace(PLACEHOLDER_LINK, link);
+		mCardio.setText(Html.fromHtml(htmlText));
 		mCardioAvg = (TextView) findViewById(R.id.valCardioAvg);
 		mCardioMax = (TextView) findViewById(R.id.valCardioMax);
+		mSpeed = (TextView) findViewById(R.id.lblSpeed);
+		mSpeed.setMovementMethod(LinkMovementMethod.getInstance());
+		htmlText = TEMPLATE.replace(PLACEHOLDER_TEXT, mSpeed.getText())
+				.replace(PLACEHOLDER_LINK, link);
+		mSpeed.setText(Html.fromHtml(htmlText));
 		mSpeedAvg = (TextView) findViewById(R.id.valSpeedAvg);
 		mSpeedMax = (TextView) findViewById(R.id.valSpeedMax);
+		mCadence = (TextView) findViewById(R.id.lblCadence);
+		mCadence.setMovementMethod(LinkMovementMethod.getInstance());
+		htmlText = TEMPLATE.replace(PLACEHOLDER_TEXT, mCadence.getText())
+				.replace(PLACEHOLDER_LINK, link);
+		mCadence.setText(Html.fromHtml(htmlText));
 		mCadenceAvg = (TextView) findViewById(R.id.valCadenceAvg);
 		mCadenceMax = (TextView) findViewById(R.id.valCadenceMax);
 		mGear = (TextView) findViewById(R.id.valGear);
@@ -83,6 +105,8 @@ public class SessionActivity extends Activity {
 				startActivity(intent);
 			}
 		});
+		
+		loadData();
         
     	Log.d(TAG, "Activity successfully created");
 	}
@@ -111,24 +135,17 @@ public class SessionActivity extends Activity {
 		return true;
 	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
+	private void loadData() {
 		
-		Log.d(TAG, "Resuming activity");
-		Uri uri = ContentUris.withAppendedId(DiaryContract.CONTENT_URI, mSessionId);
-		ContentValues values = DiaryContract.getValues(getContentResolver().query(uri, DiaryContract.PROJECTION, null, null, null));
+		WorkSessionInfo values = DiaryContract.getWorkoutEntry(this, mWorkoutId);
 		
 		if (null != values) {
 			DateFormat formatter = DateFormat.getDateTimeInstance();
-			Date start = new Date(values.getAsLong(DiaryContract.COL_START));
-			mStarted.setText(formatter.format(start));
-
-			Date end = new Date(values.getAsLong(DiaryContract.COL_END));
-			mEnded.setText(formatter.format(end));
+			mStarted.setText(formatter.format(values.getStartTime()));
+			mEnded.setText(formatter.format(values.getEndTime()));
 			
 			// clumsy hack to downcast from Double to int, truncating any decimals
-			int elapsedSecs = (int) ((double) values.getAsDouble(DiaryContract.COL_ELAPSED));
+			int elapsedSecs = (int) values.getElapsedTime();
 			int hours = elapsedSecs / 3600;
 			int extraSecs = elapsedSecs % 3600;
 			int mins = extraSecs / 60;
@@ -139,21 +156,21 @@ public class SessionActivity extends Activity {
 			buf.append(String.format("%02d", secs));
 			mDuration.setText(buf.toString());
 			
-			mDistance.setText(String.format("%.1f", values.getAsDouble(DiaryContract.COL_DISTANCE)));
-			mCardioAvg.setText(String.format("%d", Math.round(values.getAsDouble(DiaryContract.COL_CARDIO_AVG))));
-			mCardioMax.setText(String.format("%d", Math.round(values.getAsDouble(DiaryContract.COL_CARDIO_MAX))));
-			mSpeedAvg.setText(String.format("%.1f", values.getAsDouble(DiaryContract.COL_SPEED_AVG)));
-			mSpeedMax.setText(String.format("%.1f", values.getAsDouble(DiaryContract.COL_SPEED_MAX)));
-			mCadenceAvg.setText(String.format("%.1f", values.getAsDouble(DiaryContract.COL_CADENCE_AVG)));
-			mCadenceMax.setText(String.format("%.1f", values.getAsDouble(DiaryContract.COL_CADENCE_MAX)));
+			mDistance.setText(String.format("%.1f", values.getDistanceCovered()));
+			mCardioAvg.setText(String.format("%d", Math.round(values.getAverageHeartCadence())));
+			mCardioMax.setText(String.format("%d", Math.round(values.getMaxHeartCadence())));
+			mSpeedAvg.setText(String.format("%.1f", values.getAverageSpeed()));
+			mSpeedMax.setText(String.format("%.1f", values.getMaxSpeed()));
+			mCadenceAvg.setText(String.format("%.1f", values.getAverageCrankCadence()));
+			mCadenceMax.setText(String.format("%.1f", values.getMaxCrankCadence()));
 			
-			Double gf = values.getAsDouble(DiaryContract.COL_GEAR);
+			Double gf = values.getAverageGearRatio();
 			if (gf.isInfinite() || gf.isNaN() || gf == 0) {
 				mGear.setText("(na)");
 			} else {
 				mGear.setText(String.format("%.2f", gf));
 			}
-			Double ff = values.getAsDouble(DiaryContract.COL_FITNESS);
+			Double ff = values.getCardioFitnessFactor();
 			if (ff.isInfinite() || ff.isNaN() || ff == 0) {
 				mFitness.setText("(na)");
 			} else {
@@ -176,8 +193,7 @@ public class SessionActivity extends Activity {
 	        	.setMessage(R.string.msg_delete_dialog)
 	            .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
 	            	public void onClick(DialogInterface dialog, int id) {
-	            		Uri uri = ContentUris.withAppendedId(DiaryContract.CONTENT_URI, mSessionId); 
-	    				getContentResolver().delete(uri, null, null);
+	            		DiaryContract.deleteWorkoutEntry(SessionActivity.this, mWorkoutId);
 	    				SessionActivity.this.finish();
 	            	}
 	            })

@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="18"
-        android:targetSdkVersion="21" />
+        android:targetSdkVersion="22" />
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
@@ -16,6 +16,7 @@
         android:required="true" />
 
     <application
+        android:name=".Globals"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -29,14 +30,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
         <provider
-            android:name="com.nimbusware.mypersonalbiketrainer.db.DiaryContentProvider"
+            android:name=".db.DiaryContentProvider"
             android:authorities="com.nimbusware.mypersonalbiketrainer.diary"
             android:exported="false" />
 
         <service
-            android:name=".WorkSessionService"
+            android:name=".svc.WorkSessionService"
             android:enabled="true"
             android:exported="false" />
 
@@ -46,15 +47,26 @@
         </activity>
         <activity
             android:name=".CockpitActivity"
-            android:label="@string/title_activity_cockpit" >
+            android:label="@string/title_activity_cockpit"
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".SessionActivity"
-            android:label="@string/title_activity_session" >
+            android:label="@string/title_activity_session"
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".DiaryActivity"
             android:label="@string/title_activity_diary" >
+        </activity>
+        <activity
+            android:name=".LineChartActivity"
+            android:label="@string/title_activity_line_chart" >
+            <intent-filter>
+			    <category android:name="android.intent.category.DEFAULT" />
+			    <action android:name="android.intent.action.VIEW" />
+			    <data android:scheme="com.nimbusware.mypersonalbiketrainer" />  
+			</intent-filter>
         </activity>
     </application>
 

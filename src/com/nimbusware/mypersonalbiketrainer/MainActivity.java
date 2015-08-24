@@ -16,21 +16,20 @@
 
 package com.nimbusware.mypersonalbiketrainer;
 
+import com.nimbusware.mypersonalbiketrainer.svc.WorkSessionService;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
@@ -60,20 +59,6 @@ public class MainActivity extends Activity {
 	private String mHeartSensorAddr;
 	private String mWheelSensorAddr;
 	private String mCrankSensorAddr;
-
-	private final ServiceConnection mServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder service) {
-        	Log.d(TAG, "Connecting to service");
-        	WorkSessionService wsservice = ((WorkSessionService.LocalBinder) service).getService();
-        	wsservice.initSensors();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-        	Log.d(TAG, "Disconnecting from service");
-        }
-    };
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -163,12 +148,17 @@ public class MainActivity extends Activity {
 				serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
 				serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
 				serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
-				startService(serviceIntent);
 				
-				if (bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE)) {
+				// we need to start this service explicitly, as we need to keep it
+				// running in the background regardless of the state of this and
+				// other activities; however, the service should be smart enough to
+				// detect when it's time to shutdown, if ever....
+				if (null != startService(serviceIntent)) {
 					Intent intent = new Intent(MainActivity.this, CockpitActivity.class);
 					startActivity(intent);
 				} else {
+					// not much to say, unfortunately... we can only hope that next time
+					// we are going to be more lucky
 					Toast.makeText(MainActivity.this, "Unable to start!", Toast.LENGTH_SHORT).show();
 				}
 				
@@ -209,13 +199,6 @@ public class MainActivity extends Activity {
         }
 
         refreshUI();
-	}
-	
-	@Override
-	protected void onDestroy() {
-    	Log.d(TAG, "Destroying activity");
-		unbindService(mServiceConnection);
-		super.onDestroy();
 	}
 
 	private void refreshUI() {

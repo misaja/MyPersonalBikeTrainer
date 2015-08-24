@@ -1,8 +1,10 @@
 package com.nimbusware.mypersonalbiketrainer;
 
-public interface SpeedSensorListener extends RevolutionSensorListener {
+public interface SpeedSensorListener {
 
 	public void updateSpeed(double kmh);
 
 	public void updateDistance(double meters);
+
+	public void updateWheelRevsCount(int revs);
 }

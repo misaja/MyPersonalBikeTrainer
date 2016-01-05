@@ -106,7 +106,8 @@ public class DiaryContract {
 			item.mStartTime = new Date(cursor.getLong(cursor.getColumnIndex(COL_START)));
 			item.mEndTime = new Date(cursor.getLong(cursor.getColumnIndex(COL_END)));
 			item.mElapsedTime = cursor.getDouble(cursor.getColumnIndex(COL_ELAPSED));
-			item.mDistanceCovered = cursor.getDouble(cursor.getColumnIndex(COL_DISTANCE));
+			// variable is expected to be in meters, saved data is in kilometers
+			item.mDistanceCovered = cursor.getDouble(cursor.getColumnIndex(COL_DISTANCE)) * 1000;
 			item.mMaxHeartCadence = cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_MAX));
 			item.mAverageHeartCadence = cursor.getDouble(cursor.getColumnIndex(COL_CARDIO_AVG));
 			item.mMaxSpeed = cursor.getDouble(cursor.getColumnIndex(COL_SPEED_MAX));

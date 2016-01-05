@@ -101,8 +101,9 @@ public class SessionActivity extends Activity {
 		ok.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent intent = new Intent(SessionActivity.this, CockpitActivity.class);
-				startActivity(intent);
+				onBackPressed();
+//				Intent intent = new Intent(SessionActivity.this, CockpitActivity.class);
+//				startActivity(intent);
 			}
 		});
 		

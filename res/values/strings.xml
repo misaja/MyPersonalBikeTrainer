@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">My Personal Bike Trainer</string>
+    <string name="app_name">Bike Trainer</string>
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
     <string name="title_devices">BLE Device Scan</string>
@@ -24,7 +24,8 @@
     <string name="device_set">Device set</string>
     <string name="set">Set</string>
     <string name="go">GO!</string>
-
+    <string name="ok">Ok</string>
+    
     <!-- Discovery activity items -->
     <string name="title_activity_discovery">Sensor Discovery</string>
     <string name="title_set_cardio">Set Cardio Sensor</string>
@@ -40,6 +41,7 @@
     <string name="distance">Distance</string>
     <string name="time">Time</string>
     <string name="start">Start</string>
+    <string name="exit">Exit</string>
     <string name="end">End</string>
     <string name="kmh">kmh</string>
     <string name="rpm">rpm</string>
@@ -68,7 +70,7 @@
 
     <!-- Generic gialog items -->
     <string name="cancel">Cancel</string>
-    <string name="ok">OK</string>
+    <string name="close">Close</string>
 
     <!-- Wheel size dialog items -->
     <string name="title_wheel_dialog">Set wheel size in millimeters</string>

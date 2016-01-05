@@ -106,7 +106,8 @@ public class DiscoveryActivity extends ListActivity {
         mListAdapter.clear();
     }
 
-    @Override
+    @SuppressWarnings("deprecation")
+	@Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
     	Log.d(TAG, "Item selected");
         final BluetoothDevice device = mListAdapter.getSensor(position);
@@ -123,7 +124,8 @@ public class DiscoveryActivity extends ListActivity {
         finish();
     }
 
-    private void scanSensors(final boolean enable) {
+    @SuppressWarnings("deprecation")
+	private void scanSensors(final boolean enable) {
         if (enable) {
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {

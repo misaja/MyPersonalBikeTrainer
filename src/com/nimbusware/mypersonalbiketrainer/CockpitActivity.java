@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.text.format.DateUtils;
@@ -38,6 +39,8 @@ public class CockpitActivity extends Activity {
 	private static final String VOID = "";
 	
 	private final ServiceConnection mServiceConnection = new ServiceConnection() {
+		
+		// this method will be called each time we Resume this activity
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
         	Log.d(TAG, "Connecting to service");
@@ -46,15 +49,32 @@ public class CockpitActivity extends Activity {
         	// need to get an exclusive lock before tampering with members,
         	// as the UI thread will try to access these as well
         	synchronized (CockpitActivity.this) {
+        		
+        		// set the default appearance of all gauges
+        		syncGauges();
+        		
         		// get a handle to the service register our listeners with it
         		mSensorService = ((WorkSessionService.LocalBinder) service).getService();
         		mSensorService.registerSensorListeners(mHeartListener, mWheelListener, mCrankListener);
         		
-        		// set the default appearance of all gauges
-        		syncGauges();
+        		if (mSensorService.isSessionRunning()) {
+        			// a session is running: cannot Exit, can End
+        			mBtnExit.setEnabled(false);
+        			mBtnStartStop.setEnabled(true);
+					mBtnStartStop.setText(R.string.end);
+        		} else {
+        			// no session is running: can Exit, can Start if we have sensors to use
+        			mBtnExit.setEnabled(true);
+					mBtnStartStop.setText(R.string.start);
+        			mBtnStartStop.setEnabled(mSensorService.hasSensors());
+        		}
+        		
+    			// (re)start iterative check for sensor activity
+    			mStatusCheckTimer.schedule(new ActiveSensorsCheckTask(), CHECK_INTERVAL);
         	}
         }
 
+		// this method will be called each time we Pause this activity
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
         	Log.d(TAG, "Disconnecting from service");
@@ -63,6 +83,10 @@ public class CockpitActivity extends Activity {
         	// need to get an exclusive lock before tampering with members,
         	// as the UI thread will try to access these as well
         	synchronized (CockpitActivity.this) {
+        		
+        		// stop checking for sensor activity
+        		mStatusCheckTimer.purge();
+        		
         		if (null != mSensorService) { // should never be null here but you know...
             		// unregister our listeners and discard the service handle,
         			// so we know that we are not connected any more
@@ -90,12 +114,9 @@ public class CockpitActivity extends Activity {
 					// used to detect inactive/disconnected sensors
 					mLastWheelSensorRead = new Date();
 
-					// update the gauge only if the new value is consistent
-					if (isUpdateable(mViewSpeed, kmh)) {
-						// speed is rounded to the nearest 0.5 value, so that the value presented
-						// to the user does not flutter too much but is still decently reliable
-						mViewSpeed.setText(String.format("%.1f", Globals.roundZeroFive(kmh)));
-					}
+					// speed is rounded to the nearest 0.5 value, so that the value presented
+					// to the user does not flutter too much but is still decently reliable
+					mViewSpeed.setText(String.format("%.1f", Globals.roundZeroFive(kmh)));
 					
 					// exploit the speed update notification to also update
 					// the current workout distance, if any
@@ -134,11 +155,8 @@ public class CockpitActivity extends Activity {
 					// used to detect inactive/disconnected sensors
 					mLastCrankSensorRead = new Date();
 
-					// update the gauge only if the new value is consistent
-					if (isUpdateable(mViewCadence, rpm)) {
-						// truncate the value into an integer
-						mViewCadence.setText(String.format("%d", (int) rpm));
-					}
+					// truncate the value into an integer
+					mViewCadence.setText(String.format("%d", (int) rpm));
 				}
 			});
 		}
@@ -163,27 +181,12 @@ public class CockpitActivity extends Activity {
 					// used to detect inactive/disconnected sensors
 					mLastHeartSensorRead = new Date();
 					
-					// update the gauge only if the new value is consistent
-					if (isUpdateable(mViewCardio, bpm)) {
-						// truncate the value into an integer
-						mViewCardio.setText(String.format("%d", (int) bpm));
-					}
+					// truncate the value into an integer
+					mViewCardio.setText(String.format("%d", (int) bpm));
 				}
 			});
 		}
 	};
-	
-	// returns true if the given value is legitimate
-	// (we filter out zeros unless this is the very first reading)
-	private boolean isUpdateable(TextView gauge, double val) {
-		Double oldValue = (Double) gauge.getTag();
-		gauge.setTag(Double.valueOf(val));
-		if (val > 0 || null == oldValue || oldValue.equals(0)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
 	
 	// listener for the session time
 	private final ElapsedTimeListener mSessionListener = new ElapsedTimeListener() {
@@ -203,15 +206,39 @@ public class CockpitActivity extends Activity {
 		}
 	};
 	
-	// handler of the start/stop session toggle
-	private final View.OnClickListener mButtonListener = new View.OnClickListener() {
+	// handler of the exit button
+	private final View.OnClickListener mExitListener = new View.OnClickListener() {
+		
+		@Override
+		public void onClick(View v) {
+			if (null != mSensorService) {
+				
+				if (mSensorService.isSessionRunning()) {
+					// this should never happen, but just in case...
+					mSensorService.stopSession();
+				}
+				
+				// we stop the service explicitly; note that we have our service binding
+				// still active at this point, so the service will not actually shut down
+				// before the binding is removed (this will happen in the onPause() method)
+				stopMyService();
+			}
+			
+			// launch main activity
+	        Intent intent = new Intent(CockpitActivity.this, MainActivity.class);
+	        startActivity(intent);
+		}
+	};
+	
+	// handler of the start/stop button
+	private final View.OnClickListener mStartStopListener = new View.OnClickListener() {
 		@Override
 		public void onClick(View v) {
 			if (null != mSensorService) {
 				if (mSensorService.isSessionRunning()) {
 					// processing STOP SESSION command
 					
-					// get session data _bofore_ stopping
+					// get session data _before_ stopping
 					long sessionId = mSensorService.getSessionData().getLocalId();
 					
 					// stop running session
@@ -223,6 +250,9 @@ public class CockpitActivity extends Activity {
 					
 					// change function of button to START SESSION
 					mBtnStartStop.setText(R.string.start);
+					
+					// enable EXIT button
+					mBtnExit.setEnabled(true);
 					
 					// enable controls
 					if (null != mMenu) {
@@ -241,6 +271,9 @@ public class CockpitActivity extends Activity {
 
 					// change function of button to END SESSION
 					mBtnStartStop.setText(R.string.end);
+
+					// disable EXIT button
+					mBtnExit.setEnabled(false);
 					
 					// disable controls
 					if (null != mMenu) {
@@ -268,7 +301,12 @@ public class CockpitActivity extends Activity {
 	private TextView mViewCadenceUnit;
 	private TextView mViewChronometer;
 	private TextView mViewDistance;
+	private Button mBtnExit;
 	private Button mBtnStartStop;
+	private int mWheelSize;
+	private String mHeartSensorAddr;
+	private String mWheelSensorAddr;
+	private String mCrankSensorAddr;
 	private WorkSessionService mSensorService;
 	private Date mLastWheelSensorRead;
 	private Date mLastCrankSensorRead;
@@ -288,9 +326,45 @@ public class CockpitActivity extends Activity {
         mViewCadenceUnit = (TextView) findViewById(R.id.lblRpm);
         mViewChronometer = (TextView) findViewById(R.id.chronometer);
         mViewDistance = (TextView) findViewById(R.id.valDistance);
+        mBtnExit = (Button) findViewById(R.id.btnExit);
+        mBtnExit.setOnClickListener(mExitListener);
         mBtnStartStop = (Button) findViewById(R.id.btnStartStop);
-        mBtnStartStop.setOnClickListener(mButtonListener);
-    }
+        mBtnStartStop.setOnClickListener(mStartStopListener);
+
+        SharedPreferences prefs = getSharedPreferences(MainActivity.class.getSimpleName(), MODE_PRIVATE);
+        mHeartSensorAddr = prefs.getString(Globals.HEART_SENSOR_ADDR, null);
+        mWheelSensorAddr = prefs.getString(Globals.WHEEL_SENSOR_ADDR, null);
+        mCrankSensorAddr = prefs.getString(Globals.CRANK_SENSOR_ADDR, null);
+        mWheelSize = prefs.getInt(Globals.WHEEL_SIZE, Globals.WHEEL_SIZE_DEFAULT);
+        
+        if (null == mHeartSensorAddr && null == mWheelSensorAddr && null == mCrankSensorAddr) {
+			// not much to do, unfortunately...
+        	Log.e(TAG, "No saved preferences");
+			Toast.makeText(CockpitActivity.this, "No saved preferences! Quitting...", Toast.LENGTH_SHORT).show();
+			finish();
+			return;
+        }
+
+        /*
+        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
+        serviceIntent.setAction("MAIN_ACTION"); // TODO set this constant
+		serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
+		serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
+		serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
+		serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
+		
+		// we start this service explicitly, and we will need to stop it explicitly,
+		// either from this same activity or from a notification bar item (Google Play Music style)
+    	Log.d(TAG, "Starting service");
+		if (null == startService(serviceIntent)) {
+			// not much to do, unfortunately...
+	    	Log.e(TAG, "Unable to start service");
+			Toast.makeText(CockpitActivity.this, "Unable to start service! Quitting...", Toast.LENGTH_SHORT).show();
+			finish();
+			return;
+		}
+		*/
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -311,7 +385,7 @@ public class CockpitActivity extends Activity {
 				break;
 			case R.id.action_refresh:
 				if (null != mSensorService) {
-					mSensorService.initSensors();
+					mSensorService.restartSensors();
 					mSensorService.registerSensorListeners(mHeartListener, mWheelListener, mCrankListener);
 				}
 				break;
@@ -323,17 +397,12 @@ public class CockpitActivity extends Activity {
 	protected void onResume() {
     	Log.d(TAG, "Resuming activity");
     	
+    	// (re)start the service
+    	startMyService();
+    	
     	// (re)bind to service
-		Intent serviceIntent = new Intent(this, WorkSessionService.class);
-		if (bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE)) {
-			// (re)start iterative check for sensor activity
-			mStatusCheckTimer.schedule(new ActiveSensorsCheckTask(), CHECK_INTERVAL);
-		} else {
-			// this is fatal
-        	Log.e(TAG, "Unable to bind to service");
-        	Toast.makeText(this, "Unable to reach sensor service", Toast.LENGTH_LONG).show();
-        	finish();
-		}
+    	// this, after some time, will trigger the onServiceConnected handler
+    	bindMyService();
 		
 		super.onResume();
 	}
@@ -342,14 +411,49 @@ public class CockpitActivity extends Activity {
 	protected void onPause() {
 		Log.d(TAG, "Pausing activity");
 		
-		// stop checking for sensor activity
-		mStatusCheckTimer.purge();
-		
 		// detach from service
 		// this will also prevent the status checker task from rescheduling itself
+    	// this, after some time, will trigger the onServiceDisconnected handler
 		unbindService(mServiceConnection);
 		
 		super.onPause();
+	}
+	
+	private void startMyService() {
+        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
+        serviceIntent.setAction("MAIN_ACTION"); // TODO set this constant
+		serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
+		serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
+		serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
+		serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
+		
+		// we start this service explicitly, and we will need to stop it explicitly,
+		// either from this same activity or from a notification bar item (Google Play Music style)
+    	Log.d(TAG, "Starting service");
+		if (null == startService(serviceIntent)) {
+			// not much to do, unfortunately...
+	    	Log.e(TAG, "Unable to start service");
+			Toast.makeText(CockpitActivity.this, "Unable to start service! Quitting...", Toast.LENGTH_SHORT).show();
+			finish();
+			return;
+		}
+	}
+	
+	
+	private void bindMyService() {
+		Intent serviceIntent = new Intent(this, WorkSessionService.class);
+		if (!bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE)) {
+			// this is fatal
+        	Log.e(TAG, "Unable to bind to service");
+        	Toast.makeText(this, "Unable to reach sensor service", Toast.LENGTH_LONG).show();
+        	finish();
+		}
+	}
+	
+	private void stopMyService() {
+		Log.d(TAG, "Stopping service");
+        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
+        stopService(serviceIntent);
 	}
 	
 	private void syncGauges() {
@@ -359,15 +463,12 @@ public class CockpitActivity extends Activity {
 			// to arrive from sensors
 			if (!isSensorActive(mLastHeartSensorRead)) {
 				mViewCardio.setText(DISCONNECTED);
-				mViewCardio.setTag(null);
 			}
 			if (!isSensorActive(mLastWheelSensorRead)) {
 		        mViewSpeed.setText(DISCONNECTED);
-		        mViewSpeed.setTag(null);
 			}
 			if (!isSensorActive(mLastCrankSensorRead)) {
 		        mViewCadence.setText(DISCONNECTED);
-		        mViewCadence.setTag(null);
 			}
 			mViewCardioUnit.setText(R.string.bpm);
 			mViewSpeedUnit.setText(R.string.kmh);
@@ -376,11 +477,8 @@ public class CockpitActivity extends Activity {
 			// we are NOT connected to the service: gauges should
 			// convey the impression that they are dead
 			mViewCardio.setText(VOID);
-			mViewCardio.setTag(null);
 	        mViewSpeed.setText(VOID);
-	        mViewSpeed.setTag(null);
 	        mViewCadence.setText(VOID);
-	        mViewCadence.setTag(null);
 			mViewCardioUnit.setText(VOID);
 	        mViewSpeedUnit.setText(VOID);
 	        mViewCadenceUnit.setText(VOID);

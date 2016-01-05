@@ -113,8 +113,8 @@ public class SensorSet implements Sensor {
 			// only after a connection is established, but this
 			// would require Sensor to expose more of its inner state
 			// (e.g., add isConnected and isConnecting calls)
+			sensor.open();
 			for (int i = 100; i > 0; i--) {
-				sensor.open();
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {

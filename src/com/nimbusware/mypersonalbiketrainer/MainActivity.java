@@ -16,8 +16,6 @@
 
 package com.nimbusware.mypersonalbiketrainer;
 
-import com.nimbusware.mypersonalbiketrainer.svc.WorkSessionService;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -143,25 +141,8 @@ public class MainActivity extends Activity {
         mGoButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent serviceIntent = new Intent(MainActivity.this, WorkSessionService.class);
-				serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
-				serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
-				serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
-				serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
-				
-				// we need to start this service explicitly, as we need to keep it
-				// running in the background regardless of the state of this and
-				// other activities; however, the service should be smart enough to
-				// detect when it's time to shutdown, if ever....
-				if (null != startService(serviceIntent)) {
-					Intent intent = new Intent(MainActivity.this, CockpitActivity.class);
-					startActivity(intent);
-				} else {
-					// not much to say, unfortunately... we can only hope that next time
-					// we are going to be more lucky
-					Toast.makeText(MainActivity.this, "Unable to start!", Toast.LENGTH_SHORT).show();
-				}
-				
+				Intent intent = new Intent(MainActivity.this, CockpitActivity.class);
+				startActivity(intent);
 			}
 		});
     }

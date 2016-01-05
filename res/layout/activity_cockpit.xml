@@ -110,7 +110,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
-        android:layout_above="@+id/btnStartStop"
+        android:layout_above="@+id/documento_twopane_buttons"
 		android:layout_alignBaseline="@id/valDistance"
         android:textSize="24sp"
         android:text="@string/distance" />
@@ -119,19 +119,39 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:layout_above="@id/btnStartStop"
+        android:layout_above="@id/documento_twopane_buttons"
         android:paddingTop="5dp"
         android:paddingBottom="20dp"
         android:textSize="36sp" />
 
-    <!-- START -->
-    <Button
-	    android:id="@id/btnStartStop"
+    <!-- START/STOP + EXIT -->
+	<LinearLayout
+        android:id="@id/documento_twopane_buttons"
+        style="android:attr/buttonBarStyle"
 		android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-	    style="?android:attr/buttonStyleSmall"
-        android:textSize="24sp"
-        android:text="@string/start" />
-					
+	    android:gravity="bottom"
+        android:orientation="horizontal" >
+	
+		<Button
+		    android:id="@+id/btnExit"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+	        android:layout_height="wrap_content"
+		    style="?android:attr/buttonStyleSmall"
+	        android:textSize="24sp"
+	        android:text="@string/exit" />
+	    
+		<Button
+		    android:id="@+id/btnStartStop"
+			android:layout_width="0dp"
+			android:layout_weight="1"
+	        android:layout_height="wrap_content"
+		    style="?android:attr/buttonStyleSmall"
+	        android:textSize="24sp"
+	        android:text="@string/start" />
+
+	</LinearLayout>
+
 </RelativeLayout>

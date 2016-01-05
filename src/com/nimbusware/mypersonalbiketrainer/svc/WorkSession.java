@@ -125,9 +125,8 @@ class WorkSession {
 		mSensors.unregisterWheelListener(mData);
 		mSensors.unregisterCrankListener(mData);
 		mSensors.unregisterHeartListener(mData);
-		mSensors.close();
 		mSensors = null;
-		
+
 		// persist all session data, updating the opening record
 		// (this is a _synchronous_ operation)
 		if (!updateMasterRecord(mData)) {

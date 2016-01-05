@@ -24,6 +24,8 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
     private final int mWheelSize;
     
     private CscReading mLastCSCReading;
+	private double mLastSpeed;
+	private double mLastCadence;
 
     public CscSensor(Context context, BluetoothAdapter adapter, String address, int wheelSize) {
 		super(context, adapter, address, GattNames.CSC_SERVICE, GattNames.CSC_CHARACTERISTIC);
@@ -106,33 +108,49 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 		    CscReading newReading = new CscReading(wheelRevs, wheelElapsed, crankRevs, crankElapsed, mLastCSCReading);
 		    
 	    	double speed = newReading.getSpeed(mWheelSize);
-	    	double distance = newReading.getDistance(mWheelSize);
 	    	double cadence = newReading.getCrankRPM();
-	    	int actualWheelRevs = newReading.getWheelRevsSinceLastReading();
-	    	int actualCrankRevs = newReading.getCrankRevsSinceLastReading();
 	    	
 	    	buf = new StringBuffer();
 	        buf.append("SPEED=").append(speed);
-	        buf.append(", DISTANCE=").append(distance);
 	        buf.append(", CADENCE=").append(cadence);
-	        buf.append(", WHEEL_REVS=").append(actualWheelRevs);
-	        buf.append(", CRANK_REVS=").append(actualCrankRevs);
 		    Log.d(TAG, "CSC notification data: " + buf.toString());
 		    
-		    for (SpeedSensorListener listener : mSpeedListeners) {
-			    Log.d(TAG, "Sending CSC wheel sensor notification");
-		    	listener.updateSpeed(speed);
-		    	listener.updateDistance(distance);
-		    	listener.updateWheelRevsCount(actualWheelRevs);
+		    if (speed >= 0) { // filter out spurious negative values (of unknown origin)
+		    	if (speed > 0 || mLastSpeed == 0) {
+		    		// current speed is either a positive value or zero: in the latter case,
+		    		// we skip notification unless the previous value was also zero, to the
+		    		// effect that spurious zero values (i.e., single zero readings in the
+		    		// midst of a regular session) are filtered out; not that a zero speed
+		    		// reading also means that the wheel rev count is not changed since last
+		    		// reading, so total distance and total rev count are unaffected
+				    for (SpeedSensorListener listener : mSpeedListeners) {
+					    Log.d(TAG, "Sending CSC wheel sensor notification");
+				    	listener.updateSpeed(speed);
+				    	listener.updateDistance(newReading.getDistance(mWheelSize));
+				    	listener.updateWheelRevsCount(newReading.getWheelRevsSinceLastReading());
+				    }
+		    	}
 		    }
 		    
-		    for (CadenceSensorListener listener : mCadenceListeners) {
-			    Log.d(TAG, "Sending CSC crank sensor notification");
-		    	listener.updateCadence(cadence);
-		    	listener.updateCrankRevsCount(actualCrankRevs);
+		    if (cadence >= 0) { // filter out spurious negative values (of unknown origin)
+		    	if (cadence > 0 || mLastCadence == 0) {
+		    		// current cadence is either a positive value or zero: in the latter case,
+		    		// we skip notification unless the previous value was also zero, to the
+		    		// effect that spurious zero values (i.e., single zero readings in the
+		    		// midst of a regular session) are filtered out; not that a zero cadence
+		    		// reading also means that the crank rev count is not changed since last
+		    		// reading, so total total crank count is unaffected
+				    for (CadenceSensorListener listener : mCadenceListeners) {
+					    Log.d(TAG, "Sending CSC crank sensor notification");
+				    	listener.updateCadence(cadence);
+				    	listener.updateCrankRevsCount(newReading.getCrankRevsSinceLastReading());
+				    }
+		    	}
 		    }
 		    
 		    mLastCSCReading = newReading;
+		    mLastSpeed = speed;
+		    mLastCadence = cadence;
 		    
 		} else {
 		    Log.w(TAG, "CSC notification contains no data.");

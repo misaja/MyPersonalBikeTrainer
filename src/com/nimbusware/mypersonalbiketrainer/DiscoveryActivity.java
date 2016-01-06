@@ -106,10 +106,9 @@ public class DiscoveryActivity extends ListActivity {
         mListAdapter.clear();
     }
 
-    @SuppressWarnings("deprecation")
 	@Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-    	Log.d(TAG, "Item selected");
+    	Log.i(TAG, "Item selected");
         final BluetoothDevice device = mListAdapter.getSensor(position);
         if (device == null)
         	return;
@@ -117,14 +116,13 @@ public class DiscoveryActivity extends ListActivity {
             mBtAdapter.stopLeScan(mScanCallback);
             mScanning = false;
         }
-    	Log.d(TAG, "Selected item address: " + device.getAddress());
+    	Log.i(TAG, "Selected item address: " + device.getAddress());
     	Intent resultData = new Intent();
     	resultData.putExtra(Globals.SENSOR_ADDR, device.getAddress());
         setResult(RESULT_OK, resultData);
         finish();
     }
 
-    @SuppressWarnings("deprecation")
 	private void scanSensors(final boolean enable) {
         if (enable) {
             // Stops scanning after a pre-defined scan period.

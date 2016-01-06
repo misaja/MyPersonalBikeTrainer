@@ -15,7 +15,8 @@ public class HrmSensor extends SingleValueSensor implements BeatRateSensor {
     
 	private final static String TAG = HrmSensor.class.getSimpleName();
 
-	private final List<BeatRateSensorListener> mListeners = new ArrayList<BeatRateSensorListener>();
+	private final List<BeatRateSensorListener> mListeners = 
+			new ArrayList<BeatRateSensorListener>();
     
 	public HrmSensor(Context context, BluetoothAdapter adapter, String address) {
 		super(context, adapter, address, GattNames.HRM_SERVICE, GattNames.HRM_CHARACTERISTIC);
@@ -33,9 +34,6 @@ public class HrmSensor extends SingleValueSensor implements BeatRateSensor {
 
 	@Override
 	public void unregisterListener(BeatRateSensorListener listener) {
-		if (null == listener)
-			throw new NullPointerException();
-		
 		mListeners.remove(listener);
 	}
 
@@ -51,10 +49,10 @@ public class HrmSensor extends SingleValueSensor implements BeatRateSensor {
 		
 		final int heartRate = characteristic.getIntValue(format, 1);
 
-	    Log.d(TAG, "HRM notification data: HEART_RATE=" + heartRate);
+	    Log.v(TAG, "HRM notification data: HEART_RATE=" + heartRate);
 
 	    for (BeatRateSensorListener listener : mListeners) {
-		    Log.d(TAG, "Sending HRM sensor notification");
+		    Log.v(TAG, "Sending HRM sensor notification");
 	    	listener.updateBeatRate(heartRate);
 	    }
 	}

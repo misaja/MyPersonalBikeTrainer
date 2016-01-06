@@ -25,7 +25,7 @@ public class LineChartActivity extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		Log.d(TAG, "onCreate");
+		Log.i(TAG, "onCreate");
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_line_chart);
@@ -33,12 +33,12 @@ public class LineChartActivity extends Activity {
 		String uriSegment = getIntent().getData().getLastPathSegment();
 		mWorkoutId = Long.valueOf(uriSegment);
 		
-		Log.d(TAG, "Getting chart data, Workout ID=" + mWorkoutId);
+		Log.i(TAG, "Getting chart data, Workout ID=" + mWorkoutId);
 		
 		LineData data = getChartData(mWorkoutId);
 		
 		if (null != data) {
-			Log.d(TAG, "Displaying chart data, Workout ID=" + mWorkoutId);
+			Log.i(TAG, "Displaying chart data, Workout ID=" + mWorkoutId);
 			
 			mChart = (LineChart) findViewById(R.id.line_chart);
 			mChart.setDrawGridBackground(false);
@@ -63,7 +63,7 @@ public class LineChartActivity extends Activity {
 	        // set data
 	        mChart.setData(data);
 		} else {
-			Log.d(TAG, "No chart data exists, Workout ID=" + mWorkoutId);
+			Log.i(TAG, "No chart data exists, Workout ID=" + mWorkoutId);
 			Toast.makeText(this, R.string.msg_no_log, Toast.LENGTH_SHORT).show();
 			finish();
         	return;

@@ -56,7 +56,7 @@ public class SessionActivity extends Activity {
         	return;
 		}
 		
-		Log.d(TAG, "Creating activity, Workout ID=" + mWorkoutId);
+		Log.i(TAG, "Creating activity, Workout ID=" + mWorkoutId);
 		
 		String link = Globals.getWorkoutContentUri(mWorkoutId) ;
 		
@@ -109,7 +109,7 @@ public class SessionActivity extends Activity {
 		
 		loadData();
         
-    	Log.d(TAG, "Activity successfully created");
+    	Log.i(TAG, "Activity successfully created");
 	}
 
 	@Override
@@ -183,7 +183,7 @@ public class SessionActivity extends Activity {
         	return;
 		}
 		
-    	Log.d(TAG, "Activity successfully resumed");
+    	Log.i(TAG, "Activity successfully resumed");
 	}
 	
 	public class DeleteDialog extends DialogFragment {

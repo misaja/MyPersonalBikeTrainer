@@ -8,6 +8,7 @@ public class SensorSet implements Sensor {
 	private final SpeedSensor mWheelSensor;
 	private final CadenceSensor mCrankSensor;
 	
+	private boolean mOperationPending;
 	private boolean mIsOpen;
 	
 	public SensorSet(BeatRateSensor heartSensor, SpeedSensor wheelSensor, CadenceSensor crankSensor) {
@@ -52,13 +53,18 @@ public class SensorSet implements Sensor {
 		}
 	}
 	
-	public boolean isOpen() {
+	public synchronized boolean isOpen() {
 		return mIsOpen;
+	}
+	
+	public synchronized boolean isBusy() {
+		return mOperationPending;
 	}
 
 	@Override
-	public boolean open() {
-		if (!mIsOpen) {
+	public synchronized boolean open() {
+		if (!mOperationPending && !mIsOpen) {
+			mOperationPending = true;
 			Opener opener = new Opener();
 			opener.execute((Void)null);
 			return true;
@@ -68,7 +74,7 @@ public class SensorSet implements Sensor {
 	}
 
 	@Override
-	public void close() {
+	public synchronized void close() {
 		if (mIsOpen) {
 			if (null != mHeartSensor) {
 				mHeartSensor.close();
@@ -82,6 +88,7 @@ public class SensorSet implements Sensor {
 			}
 			mIsOpen = false;
 		}
+		mOperationPending = false;
 	}
 	
 	private class Opener extends AsyncTask<Void, Void, Void> {
@@ -89,42 +96,51 @@ public class SensorSet implements Sensor {
 		@Override
 		protected Void doInBackground(Void... params) {
 			synchronized (SensorSet.this) {
+				boolean open = false;
 				if (null != mHeartSensor && !mHeartSensor.isOpen()) {
-					openSynchronously(mHeartSensor);
+					boolean result = openSynchronously(mHeartSensor);
+					open = open || result;
 				}
 				if (null != mWheelSensor && !mWheelSensor.isOpen()) {
-					openSynchronously(mWheelSensor);
+					boolean result = openSynchronously(mWheelSensor);
+					open = open || result;
 				}
 				// wheel and crank may be (and usually are) monitored by the same sensor
 				if (null != mCrankSensor && mCrankSensor != mWheelSensor && !mCrankSensor.isOpen()) {
-					openSynchronously(mCrankSensor);
+					boolean result = openSynchronously(mCrankSensor);
+					open = open || result;
 				}
-				mIsOpen = true;
+				
+				// for us to be in "open" state, at least one sensor should be so
+				mIsOpen = open;
+				mOperationPending = false;
 			}
 			return null;
 		}
 		
 		private boolean openSynchronously(Sensor sensor) {
 			boolean open = false;
-			// max 10 seconds waiting for a working device
-			// BEWARE: as this code works now it will wait until
-			// timeout even if NO sensor is actually there!
-			// a possible improvement might be to start waiting
-			// only after a connection is established, but this
-			// would require Sensor to expose more of its inner state
-			// (e.g., add isConnected and isConnecting calls)
+			
+			// spend max 100 seconds waiting for a working device
+			// before trying to open the next one
 			sensor.open();
-			for (int i = 100; i > 0; i--) {
+			for (int i = 1000; i > 0; i--) {
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				if (sensor.isOpen()) {
-					open = true;
+				if (!sensor.isBusy()) {
+					open = sensor.isOpen();
 					break;
 				}
 			}
+			
+			// TODO how can we manage a situation where we reached
+			// the timeout and still we have a connection is progress?
+			// there should be some way of aborting the system BLE
+			// threads
+			
 			return open;
 		}
 	}

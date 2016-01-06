@@ -2,7 +2,7 @@ package com.nimbusware.mypersonalbiketrainer.ble;
 
 import java.util.UUID;
 
-import com.nimbusware.mypersonalbiketrainer.Globals;
+//import com.nimbusware.mypersonalbiketrainer.Globals;
 
 
 import android.bluetooth.BluetoothAdapter;
@@ -49,63 +49,77 @@ public abstract class SingleValueSensor {
 	
     // Implements callback methods for GATT events that we care about
     private final BluetoothGattCallback mCallback = new BluetoothGattCallback() {
-        @Override
+
+        // this may be called a LONG time after BluetoothDevice.connectGatt() is started
+        // (e.g., 50s when the BLE device was in standby); if no BLE device is reachable at
+    	// the given address, however, it is called quite immediately
+    	@Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-        	synchronized (SingleValueSensor.this) {
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    Log.d(TAG, "Connected to GATT server at " + mAddress);
-                    // Attempts to discover services after successful connection,
-                    // but waits for a short time before sending the new command
-                    // in order to ease BLE operations
-	                Globals.waitBleServer();
-                    if (gatt.discoverServices()) {
-                        Log.d(TAG, "Discoverig services of GATT server at " + mAddress);
-                    } else {
-                    	mOperationPending = false;
-                        Log.w(TAG, "Cannot start service discovery of GATT server at " + mAddress);
-                    }
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                	mOperationPending = false;
-                	mOpen = false;
-                    Log.d(TAG, "Disconnected from GATT server at " + mAddress);
-                }
-			}
+        	if (status == BluetoothGatt.GATT_SUCCESS) {
+	        	synchronized (SingleValueSensor.this) {
+	                if (newState == BluetoothProfile.STATE_CONNECTED) {
+	                    Log.i(TAG, "Connected to GATT server at " + mAddress);
+		                //Globals.waitBleServer();
+	                    // this launches a background system thread, which will
+	                    // eventually call the onServicesDiscovered callback (see below)
+	                    // when done - timing is very tight if the BLE device is responding
+	                    if (gatt.discoverServices()) { 
+	                        Log.i(TAG, "Discoverig services of GATT server at " + mAddress);
+	                    } else {
+	                    	mOperationPending = false;
+	                        Log.w(TAG, "Cannot start service discovery of GATT server at " + mAddress);
+	                    }
+	                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+	                	mOperationPending = false;
+	                	mOpen = false;
+	                    Log.i(TAG, "Disconnected from GATT server at " + mAddress);
+	                }
+				}
+        	} else {
+        		// device unreachable
+            	mOperationPending = false;
+                Log.w(TAG, "Connection to GATT server at " + mAddress + " failed");
+        	}
         }
 
+        // this is typically called immediately after BluetoothGatt.discoverServices() is started,
+        // provided a BLE device is reachable at the given address; if that is not the case,
+    	// however, this might NEVER be called - so it is important to detect the "device unreachable"
+    	// condition in the onConnectionStateChange callback (see above)
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         	synchronized (SingleValueSensor.this) {
 	            if (status == BluetoothGatt.GATT_SUCCESS) {
-	                Log.d(TAG, "Service discovery successfully completed on GATT server at " + mAddress);
+	                Log.i(TAG, "Service discovery successfully completed on GATT server at " + mAddress);
 
 	                // Attempts to get a service handle from the connected device,
                     // but waits for a short time before sending the new command
                     // in order to ease BLE operations
-	                Globals.waitBleServer();
-	            	BluetoothGattService srv = gatt.getService(mServiceId);
+	                //Globals.waitBleServer();
+	            	BluetoothGattService srv = gatt.getService(mServiceId); // timing ~0.1s
 	            	if (null != srv) {
-	                    Log.d(TAG, "Target service " + mServiceId.toString() + " successfully acquired on GATT server at " + mAddress);
+	                    Log.i(TAG, "Target service " + mServiceId.toString() + " successfully acquired on GATT server at " + mAddress);
 
 		                // Attempts to get a characteristic handle from the service handle,
 	                    // but waits for a short time before sending the new command
 	                    // in order to ease BLE operations
-		                Globals.waitBleServer();
-	            		mCharacteristic = srv.getCharacteristic(mCharacteristicId);
+		                // Globals.waitBleServer();
+	            		mCharacteristic = srv.getCharacteristic(mCharacteristicId); // timing ~0.1s
 	            		if (null != mCharacteristic) {
-	                        Log.d(TAG, "Target service characteristic " + mCharacteristic.toString() + " successfully acquired on GATT server at " + mAddress);
+	                        Log.i(TAG, "Target service characteristic " + mCharacteristic.toString() + " successfully acquired on GATT server at " + mAddress);
 
 			                // Attempts to set up characteristic notification,
 		                    // but waits for a short time before sending the new command
 		                    // in order to ease BLE operations
-			                Globals.waitBleServer();
-	            			if (mServer.setCharacteristicNotification(mCharacteristic, true)) {
+			                // Globals.waitBleServer();
+	            			if (mServer.setCharacteristicNotification(mCharacteristic, true)) { // timing ~0.1s
+		            			Log.i(TAG, "Writing configuration for service characteristic " + mCharacteristic.toString() + " on GATT server at " + mAddress);
 		            			BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(GattNames.CLIENT_CHARACTERISTIC_CONFIG);
 		            			descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-		                        Log.d(TAG, "Writing configuration for service characteristic " + mCharacteristic.toString() + " on GATT server at " + mAddress);
-		            			mServer.writeDescriptor(descriptor);
-		                    	mOperationPending = false;
+		            			mServer.writeDescriptor(descriptor); // timing ~0.1s
 		                    	
 		                    	// sensor is now open for business
+		                    	mOperationPending = false;
 		                    	mOpen = true;
 	            			} else {
 	                        	mOperationPending = false;
@@ -129,7 +143,7 @@ public abstract class SingleValueSensor {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            Log.d(TAG, "New characteristic data from GATT server at " + mAddress + ": " + bytesToHex(characteristic.getValue()) + " [Thread ID: " + Thread.currentThread().getId() + "]");
+            Log.v(TAG, "New characteristic data from GATT server at " + mAddress + ": " + bytesToHex(characteristic.getValue()) + " [Thread ID: " + Thread.currentThread().getId() + "]");
         	notifyListeners(characteristic);
         }
 
@@ -138,7 +152,7 @@ public abstract class SingleValueSensor {
 				BluetoothGattDescriptor descriptor, int status) {
 			super.onDescriptorWrite(gatt, descriptor, status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.d(TAG, "Configuration of service characteristic " + mCharacteristic.toString() + " completed successfully on GATT server at " + mAddress);
+                Log.i(TAG, "Configuration of service characteristic " + mCharacteristic.toString() + " completed successfully on GATT server at " + mAddress);
             } else {
                 Log.w(TAG, "Configuration of service characteristic " + mCharacteristic.toString() + " failed on GATT server at " + mAddress);
             }
@@ -170,16 +184,16 @@ public abstract class SingleValueSensor {
 		return mOpen;
 	}
 	
-	public synchronized boolean isWaiting() {
+	public synchronized boolean isBusy() {
 		return mOperationPending;
 	}
 	
 	public synchronized boolean open() {
 		if (!mOperationPending) {
-	        Log.d(TAG, "Opening Bluetooth device at " + mAddress);
+	        Log.i(TAG, "Opening Bluetooth device at " + mAddress);
 	        BluetoothDevice device = mAdapter.getRemoteDevice(mAddress);
 	    	mOperationPending = true;
-	        Log.d(TAG, "Connecting to GATT server at " + mAddress);
+	        Log.i(TAG, "Connecting to GATT server at " + mAddress);
 	    	mServer = device.connectGatt(mContext, true, mCallback);
 	    	return true;
 		} else {
@@ -188,7 +202,7 @@ public abstract class SingleValueSensor {
 	}
 	
 	public void close() {
-        Log.d(TAG, "Closing Bluetooth device at " + mAddress);
+        Log.i(TAG, "Closing Bluetooth device at " + mAddress);
 		if (null != mServer) {
 			mOperationPending = false;
 			mOpen = false;

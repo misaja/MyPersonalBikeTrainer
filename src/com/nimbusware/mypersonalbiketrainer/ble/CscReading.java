@@ -48,12 +48,12 @@ public class CscReading {
 	public double getWheelRPM() {
 		double rpm = 0;
 		int revCount = getWheelRevsSinceLastReading();
-		Log.d(TAG, "Wheel: rev count is " + revCount);
+		Log.v(TAG, "Wheel: rev count is " + revCount);
 		double secCount = getWheelSecondsSinceLastReading();
-		Log.d(TAG, "Wheel: sec count is " + secCount);
+		Log.v(TAG, "Wheel: sec count is " + secCount);
 		if (secCount > 0) {
 			rpm = revCount / secCount * 60;
-			Log.d(TAG, "Wheel: rpm is " + rpm);
+			Log.v(TAG, "Wheel: rpm is " + rpm);
 		}
 		return rpm;
 	}
@@ -67,12 +67,12 @@ public class CscReading {
 	public double getCrankRPM() {
 		double rpm = 0;
 		int revCount = getCrankRevsSinceLastReading();
-		Log.d(TAG, "Crank: rev count is " + revCount);
+		Log.v(TAG, "Crank: rev count is " + revCount);
 		double secCount = getCrankSecondsSinceLastReading();
-		Log.d(TAG, "Crank: sec count is " + secCount);
+		Log.v(TAG, "Crank: sec count is " + secCount);
 		if (secCount > 0) {
 			rpm = revCount / secCount * SECS_IN_MINUTE;
-			Log.d(TAG, "Crank: rpm is " + rpm);
+			Log.v(TAG, "Crank: rpm is " + rpm);
 		}
 		return rpm;
 	}
@@ -90,9 +90,9 @@ public class CscReading {
 		double rpms = getWheelRPM();
 		if (rpms > 0) {
 			speed = rpms * wheelSize * SPEED_CONSTANT;
-			Log.d(TAG, "Wheel: speed is " + speed);
+			Log.v(TAG, "Wheel: speed is " + speed);
 		} else {
-			Log.d(TAG, "Wheel: speed is 0");
+			Log.v(TAG, "Wheel: speed is 0");
 		}
 		return speed;
 	}

@@ -43,61 +43,43 @@ public class CockpitActivity extends Activity {
 		// this method will be called each time we Resume this activity
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) {
-        	Log.d(TAG, "Connecting to service");
+        	Log.i(TAG, "Connecting to service");
         	
-        	// this runs in a system thread:
-        	// need to get an exclusive lock before tampering with members,
-        	// as the UI thread will try to access these as well
-        	synchronized (CockpitActivity.this) {
-        		
-        		// set the default appearance of all gauges
-        		syncGauges();
-        		
-        		// get a handle to the service register our listeners with it
-        		mSensorService = ((WorkSessionService.LocalBinder) service).getService();
-        		mSensorService.registerSensorListeners(mHeartListener, mWheelListener, mCrankListener);
-        		
-        		if (mSensorService.isSessionRunning()) {
-        			// a session is running: cannot Exit, can End
-        			mBtnExit.setEnabled(false);
-        			mBtnStartStop.setEnabled(true);
-					mBtnStartStop.setText(R.string.end);
-        		} else {
-        			// no session is running: can Exit, can Start if we have sensors to use
-        			mBtnExit.setEnabled(true);
-					mBtnStartStop.setText(R.string.start);
-        			mBtnStartStop.setEnabled(mSensorService.hasSensors());
-        		}
-        		
-    			// (re)start iterative check for sensor activity
-    			mStatusCheckTimer.schedule(new ActiveSensorsCheckTask(), CHECK_INTERVAL);
-        	}
+    		// get a handle to the service register our listeners with it
+    		mSensorService = ((WorkSessionService.LocalBinder) service).getService();
+    		
+    		// set the default appearance of all gauges
+    		syncGauges();
+    		
+    		// register all sensor listeners
+    		mSensorService.registerSensorListeners(mHeartListener, mWheelListener, mCrankListener);
+    		
+    		if (mSensorService.isSessionRunning()) {
+    			// active session on the run: register the session listener
+    			mSensorService.registerSessionListener(mSessionListener);
+
+    			// cannot Exit, can End the current session
+    			mBtnExit.setEnabled(false);
+    			mBtnStartStop.setEnabled(true);
+				mBtnStartStop.setText(R.string.end);
+    		} else {
+    			// no active session: can Exit, can Start new session 
+    			// if we have at least one sensor available for use
+    			mBtnExit.setEnabled(true);
+				mBtnStartStop.setText(R.string.start);
+    			mBtnStartStop.setEnabled(mSensorService.hasSensors());
+    		}
+    		
+			// start iterative check for sensor activity
+    		// (will call syncGauges every N seconds)
+			mStatusCheckTimer.schedule(new ActiveSensorsCheckTask(), CHECK_INTERVAL);
         }
 
-		// this method will be called each time we Pause this activity
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-        	Log.d(TAG, "Disconnecting from service");
-        	
-        	// this runs in a system thread:
-        	// need to get an exclusive lock before tampering with members,
-        	// as the UI thread will try to access these as well
-        	synchronized (CockpitActivity.this) {
-        		
-        		// stop checking for sensor activity
-        		mStatusCheckTimer.purge();
-        		
-        		if (null != mSensorService) { // should never be null here but you know...
-            		// unregister our listeners and discard the service handle,
-        			// so we know that we are not connected any more
-		    		mSensorService.unregisterSensorListeners(mHeartListener, mWheelListener, mCrankListener);
-		    		mSensorService = null;
-        		}
-        		
-        		// set the default appearance of all gauges
-        		syncGauges();
-        	}
-        }
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			// nothing to do: this will never be called unless in
+			// extreme circumstances
+		}
     };
 	
 	// listener for the wheel sensor, if any
@@ -217,14 +199,12 @@ public class CockpitActivity extends Activity {
 					// this should never happen, but just in case...
 					mSensorService.stopSession();
 				}
-				
-				// we stop the service explicitly; note that we have our service binding
-				// still active at this point, so the service will not actually shut down
-				// before the binding is removed (this will happen in the onPause() method)
-				stopMyService();
+
+				// signal to the onPause method to shutdown the service
+				mExiting = true;
 			}
 			
-			// launch main activity
+			// launch main activity (the onPause method will be called)
 	        Intent intent = new Intent(CockpitActivity.this, MainActivity.class);
 	        startActivity(intent);
 		}
@@ -242,6 +222,7 @@ public class CockpitActivity extends Activity {
 					long sessionId = mSensorService.getSessionData().getLocalId();
 					
 					// stop running session
+					mSensorService.unregisterSessionListener(mSessionListener);
 					mSensorService.stopSession();
 					
 					// reset all UI items to default
@@ -254,9 +235,9 @@ public class CockpitActivity extends Activity {
 					// enable EXIT button
 					mBtnExit.setEnabled(true);
 					
-					// enable controls
+					// enable navigation
 					if (null != mMenu) {
-						syncMenu(true);
+						enableNavigation(true);
 					}
 					
 					// launch session viewer
@@ -267,7 +248,8 @@ public class CockpitActivity extends Activity {
 					// processing START SESSION command
 
 					// start new session
-					mSensorService.startSession(mSessionListener);
+					mSensorService.registerSessionListener(mSessionListener);
+					mSensorService.startSession();
 
 					// change function of button to END SESSION
 					mBtnStartStop.setText(R.string.end);
@@ -275,9 +257,9 @@ public class CockpitActivity extends Activity {
 					// disable EXIT button
 					mBtnExit.setEnabled(false);
 					
-					// disable controls
+					// disable navigation
 					if (null != mMenu) {
-						syncMenu(false);
+						enableNavigation(false);
 					}
 				} else {
 					// trying to START SESSION with an
@@ -299,8 +281,8 @@ public class CockpitActivity extends Activity {
 	private TextView mViewCardioUnit;
 	private TextView mViewSpeedUnit;
 	private TextView mViewCadenceUnit;
-	private TextView mViewChronometer;
 	private TextView mViewDistance;
+	private TextView mViewChronometer;
 	private Button mBtnExit;
 	private Button mBtnStartStop;
 	private int mWheelSize;
@@ -311,10 +293,11 @@ public class CockpitActivity extends Activity {
 	private Date mLastWheelSensorRead;
 	private Date mLastCrankSensorRead;
 	private Date mLastHeartSensorRead;
+	private boolean mExiting;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-    	Log.d(TAG, "Creating activity");
+    	Log.i(TAG, "Creating activity");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_cockpit);
         
@@ -344,26 +327,6 @@ public class CockpitActivity extends Activity {
 			finish();
 			return;
         }
-
-        /*
-        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
-        serviceIntent.setAction("MAIN_ACTION"); // TODO set this constant
-		serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
-		serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
-		serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
-		serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
-		
-		// we start this service explicitly, and we will need to stop it explicitly,
-		// either from this same activity or from a notification bar item (Google Play Music style)
-    	Log.d(TAG, "Starting service");
-		if (null == startService(serviceIntent)) {
-			// not much to do, unfortunately...
-	    	Log.e(TAG, "Unable to start service");
-			Toast.makeText(CockpitActivity.this, "Unable to start service! Quitting...", Toast.LENGTH_SHORT).show();
-			finish();
-			return;
-		}
-		*/
 	}
 
 	@Override
@@ -395,41 +358,49 @@ public class CockpitActivity extends Activity {
 
 	@Override
 	protected void onResume() {
-    	Log.d(TAG, "Resuming activity");
+    	Log.i(TAG, "Resuming activity");
     	
-    	// (re)start the service
-    	startMyService();
-    	
-    	// (re)bind to service
+    	// attach to service
     	// this, after some time, will trigger the onServiceConnected handler
-    	bindMyService();
+    	attachToService();
 		
 		super.onResume();
 	}
 
     @Override
 	protected void onPause() {
-		Log.d(TAG, "Pausing activity");
-		
-		// detach from service
-		// this will also prevent the status checker task from rescheduling itself
-    	// this, after some time, will trigger the onServiceDisconnected handler
-		unbindService(mServiceConnection);
-		
 		super.onPause();
+
+		Log.i(TAG, "Pausing activity");
+		
+		detachFromService();
+
+		if (mExiting) {
+			mExiting = false;
+			stopMyService();
+		}
 	}
 	
-	private void startMyService() {
-        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
-        serviceIntent.setAction("MAIN_ACTION"); // TODO set this constant
+    @Override
+	protected void onDestroy() {
+		super.onDestroy();
+		
+		Log.i(TAG, "Destroying activity");
+	}
+
+	// called each time we Resume this activity 
+	private void attachToService() {
+		// pass global settings along to service
+        Intent serviceIntent = new Intent(this, WorkSessionService.class);
 		serviceIntent.putExtra(Globals.HEART_SENSOR_ADDR, mHeartSensorAddr);
 		serviceIntent.putExtra(Globals.WHEEL_SENSOR_ADDR, mWheelSensorAddr);
 		serviceIntent.putExtra(Globals.CRANK_SENSOR_ADDR, mCrankSensorAddr);
 		serviceIntent.putExtra(Globals.WHEEL_SIZE, mWheelSize);
 		
-		// we start this service explicitly, and we will need to stop it explicitly,
-		// either from this same activity or from a notification bar item (Google Play Music style)
-    	Log.d(TAG, "Starting service");
+		// we start our service explicitly and we'll need to stop it explicitly;
+		// note that after the service is started the first time,
+		// all subsequent start calls actually do nothing
+    	Log.i(TAG, "Starting service");
 		if (null == startService(serviceIntent)) {
 			// not much to do, unfortunately...
 	    	Log.e(TAG, "Unable to start service");
@@ -437,22 +408,46 @@ public class CockpitActivity extends Activity {
 			finish();
 			return;
 		}
-	}
-	
-	
-	private void bindMyService() {
-		Intent serviceIntent = new Intent(this, WorkSessionService.class);
+
+		// bind to our service and get all the references
+		// that are needed for direct interaction
+    	Log.i(TAG, "Binding service");
 		if (!bindService(serviceIntent, mServiceConnection, BIND_AUTO_CREATE)) {
-			// this is fatal
-        	Log.e(TAG, "Unable to bind to service");
+			// not much to do, unfortunately...
+        	Log.e(TAG, "Unable to bind service");
         	Toast.makeText(this, "Unable to reach sensor service", Toast.LENGTH_LONG).show();
         	finish();
 		}
 	}
+    
+	// called each time we Pause this activity and the user presses the Exit button 
+    private void detachFromService() {
+		// stop the background thread that checks for sensor activity
+		mStatusCheckTimer.purge();
+		
+		if (null != mSensorService) {
+    		// unregister all listeners and discard the service handle,
+			// so that we know we are not connected any more
+    		mSensorService.unregisterSensorListeners(mHeartListener, mWheelListener, mCrankListener);
+    		if (mSensorService.isSessionRunning()) {
+    			mSensorService.unregisterSessionListener(mSessionListener);
+    		}
+    		mSensorService = null;
+		}
+		
+		// set the default appearance of all gauges
+		syncGauges();
+		
+		// note that this will NOT trigger a call to 
+		// ServiceConnection.onServiceDisconnected
+		Log.i(TAG, "Unbinding service");
+		unbindService(mServiceConnection);
+    }
 	
+    // called only when the user clicks the Exit button 
 	private void stopMyService() {
-		Log.d(TAG, "Stopping service");
-        Intent serviceIntent = new Intent(CockpitActivity.this, WorkSessionService.class);
+		Log.i(TAG, "Stopping service");
+        Intent serviceIntent = new Intent(this, WorkSessionService.class);
         stopService(serviceIntent);
 	}
 	
@@ -482,6 +477,8 @@ public class CockpitActivity extends Activity {
 			mViewCardioUnit.setText(VOID);
 	        mViewSpeedUnit.setText(VOID);
 	        mViewCadenceUnit.setText(VOID);
+	    	mViewDistance.setText(VOID);
+	    	mViewChronometer.setText(VOID);
 		}
 	}
 	
@@ -496,10 +493,9 @@ public class CockpitActivity extends Activity {
 		}
 	}
 	
-	private void syncMenu(boolean enabled) {
+	private void enableNavigation(boolean enabled) {
         mMenu.findItem(R.id.action_diary).setEnabled(enabled);
         mMenu.findItem(R.id.action_settings).setEnabled(enabled);
-        mMenu.findItem(R.id.action_refresh).setEnabled(enabled);
 	}
 	
 	// this deferred task is responsible for resetting gauges to

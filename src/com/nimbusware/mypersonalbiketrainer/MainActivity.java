@@ -60,7 +60,7 @@ public class MainActivity extends Activity {
 
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
-    	Log.d(TAG, "Creating activity");
+    	Log.i(TAG, "Creating activity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
         mWheelSizeText = (TextView) findViewById(R.id.txtWheelSize);
         mGoButton = (Button) findViewById(R.id.btnGo);
         
-    	Log.d(TAG, "Loading saved settings");
+    	Log.i(TAG, "Loading saved settings");
         SharedPreferences prefs = getSharedPreferences(MainActivity.class.getSimpleName(), MODE_PRIVATE);
         mHeartSensorAddr = prefs.getString(Globals.HEART_SENSOR_ADDR, null);
         mWheelSensorAddr = prefs.getString(Globals.WHEEL_SENSOR_ADDR, null);
@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onResume() {
-    	Log.d(TAG, "Resuming activity");
+    	Log.i(TAG, "Resuming activity");
 		super.onResume();
     	
         if (!mAdapter.isEnabled()) {
@@ -213,7 +213,7 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-    	Log.d(TAG, "Handling activity results");
+    	Log.i(TAG, "Handling activity results");
         
         if (requestCode == Globals.REQ_ENABLE_BT) {
         	if (resultCode == Activity.RESULT_OK) {
@@ -242,7 +242,7 @@ public class MainActivity extends Activity {
     		}
         }
 
-    	Log.d(TAG, "Activity results successfully handled");
+    	Log.i(TAG, "Activity results successfully handled");
     }
     
     private void storeString(String key, String value) {

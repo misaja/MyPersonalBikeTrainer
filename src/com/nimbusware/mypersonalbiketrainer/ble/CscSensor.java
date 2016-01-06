@@ -19,8 +19,10 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
     private final static int WHEEL_DATA_MASK = 0x01;
     private final static int CRANK_DATA_MASK = 0x02;
     
-    private final List<SpeedSensorListener> mSpeedListeners = new ArrayList<SpeedSensorListener>();
-    private final List<CadenceSensorListener> mCadenceListeners = new ArrayList<CadenceSensorListener>();
+    private final List<SpeedSensorListener> mSpeedListeners = 
+    		new ArrayList<SpeedSensorListener>();
+    private final List<CadenceSensorListener> mCadenceListeners = 
+    		new ArrayList<CadenceSensorListener>();
     private final int mWheelSize;
     
     private CscReading mLastCSCReading;
@@ -44,9 +46,6 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 
 	@Override
 	public void unregisterListener(SpeedSensorListener listener) {
-		if (null == listener)
-			throw new NullPointerException();
-		
 		mSpeedListeners.remove(listener);
 	}
 
@@ -103,7 +102,7 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 	        buf.append(", WHEEL_TIME_COUNT=").append(wheelElapsed);
 	        buf.append(", CRANK_REV_COUNT=").append(crankRevs);
 	        buf.append(", CRANK_TIME_COUNT=").append(crankElapsed);
-		    Log.d(TAG, "CSC raw data: " + buf.toString());
+		    Log.v(TAG, "CSC raw data: " + buf.toString());
 
 		    CscReading newReading = new CscReading(wheelRevs, wheelElapsed, crankRevs, crankElapsed, mLastCSCReading);
 		    
@@ -113,7 +112,7 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 	    	buf = new StringBuffer();
 	        buf.append("SPEED=").append(speed);
 	        buf.append(", CADENCE=").append(cadence);
-		    Log.d(TAG, "CSC notification data: " + buf.toString());
+		    Log.v(TAG, "CSC notification data: " + buf.toString());
 		    
 		    if (speed >= 0) { // filter out spurious negative values (of unknown origin)
 		    	if (speed > 0 || mLastSpeed == 0) {
@@ -124,7 +123,7 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 		    		// reading also means that the wheel rev count is not changed since last
 		    		// reading, so total distance and total rev count are unaffected
 				    for (SpeedSensorListener listener : mSpeedListeners) {
-					    Log.d(TAG, "Sending CSC wheel sensor notification");
+					    Log.v(TAG, "Sending CSC wheel sensor notification");
 				    	listener.updateSpeed(speed);
 				    	listener.updateDistance(newReading.getDistance(mWheelSize));
 				    	listener.updateWheelRevsCount(newReading.getWheelRevsSinceLastReading());
@@ -141,7 +140,7 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 		    		// reading also means that the crank rev count is not changed since last
 		    		// reading, so total total crank count is unaffected
 				    for (CadenceSensorListener listener : mCadenceListeners) {
-					    Log.d(TAG, "Sending CSC crank sensor notification");
+					    Log.v(TAG, "Sending CSC crank sensor notification");
 				    	listener.updateCadence(cadence);
 				    	listener.updateCrankRevsCount(newReading.getCrankRevsSinceLastReading());
 				    }

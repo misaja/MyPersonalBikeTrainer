@@ -35,7 +35,7 @@ public class Globals extends Application {
 	public static final int REQ_DISCOVER_CADENCE_SENSOR = 4;
 	public static final Date NEVER = new Date(0);
 	
-	private static final int BLE_WAIT_TIME = 100;
+	//private static final int BLE_WAIT_TIME = 100;
 	private static final BigDecimal ZEROTWOFIVE = new BigDecimal("0.25");
 	private static final BigDecimal ZEROSEVENFIVE = new BigDecimal("0.75");
 	private static final BigDecimal ZEROFIVE = new BigDecimal("0.50");
@@ -96,6 +96,7 @@ public class Globals extends Application {
 	    return origVal.doubleValue();
 	}
 	
+	/*
 	public static void waitBleServer() {
         try {
 			Thread.sleep(BLE_WAIT_TIME);
@@ -103,6 +104,7 @@ public class Globals extends Application {
 			e.printStackTrace();
 		}
 	}
+	*/
 	
 	public static String getTimeSpanStringFromSecs(long secs) {
 		return getTimeSpanStringFromMillis(secs * 1000);

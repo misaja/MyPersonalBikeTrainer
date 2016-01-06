@@ -1,6 +1,8 @@
 package com.nimbusware.mypersonalbiketrainer.svc;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,8 +29,10 @@ class WorkSession {
 	private final static int SESSION_TICK_TIMING = 1000;
 	private final static int SESSION_LOG_TIMING = 10000;
 	
+    private final List<ElapsedTimeListener> mListeners = 
+    		new ArrayList<ElapsedTimeListener>();
 	private SensorSet mSensors;
-	private Data mData;
+	private Data mData; 
 	private Timer mSessionTickTimer;
 	private Timer mSessionLogTimer;
 	
@@ -40,14 +44,27 @@ class WorkSession {
 		return null != mData;
 	}
 	
-	void start(SensorSet sensors, final ElapsedTimeListener listener) {
+	void registerListener(ElapsedTimeListener listener) {
+		if (null == listener)
+			throw new NullPointerException();
+		
+		if (!mListeners.contains(listener)) {
+			mListeners.add(listener);
+		}
+	}
+	
+	void unregisterListener(ElapsedTimeListener listener) {
+		mListeners.remove(listener);
+	}
+	
+	void start(SensorSet sensors) {
 		if (null == sensors) // fail fast
 			throw new NullPointerException(); 
 		
 		if (null != mData) // defensive
 			throw new IllegalStateException("Work session is already running");
 		
-		Log.d(TAG, "Starting work session");
+		Log.i(TAG, "Starting work session");
 		
 		// write placeholder record in DB and get back assigned _ID
 		// (this is a _synchronous_ operation)
@@ -55,7 +72,7 @@ class WorkSession {
 		Date startTime = new Date();
 		long localId = createMasterRecord(uniqueId, startTime);
 		if (localId > 0) {
-			Log.d(TAG, "Session master record inserted with Id=" + localId);
+			Log.i(TAG, "Session master record inserted with Id=" + localId);
 		} else {
 			// this is impossible, afaik: no reason not to
 			// crash the entire app if I'm wrong...
@@ -67,21 +84,25 @@ class WorkSession {
 		mData = new Data(localId, uniqueId, startTime);
 
 		mSensors = sensors;
+		
+		// Data is a session listener by its own account: it receives direct
+		// updates from the sensors without any involvement of the front-end UI
 		mSensors.registerWheelListener(mData);
 		mSensors.registerCrankListener(mData);
 		mSensors.registerHeartListener(mData);
 
-		if (null != listener) { // listener is optional
-			mSessionTickTimer = new Timer();
-			mSessionTickTimer.schedule(new TimerTask() {
-				
-				@Override
-				public void run() {
-					listener.updateElapsedTime(mData.getElapsedTime());
+		mSessionTickTimer = new Timer();
+		mSessionTickTimer.schedule(new TimerTask() {
+			
+			@Override
+			public void run() {
+				double elapsedTime = mData.getElapsedTime();
+				for (ElapsedTimeListener listener : mListeners) {
+					listener.updateElapsedTime(elapsedTime);
 				}
-				
-			}, 0, SESSION_TICK_TIMING);
-		}
+			}
+			
+		}, 0, SESSION_TICK_TIMING);
 		
 		mSessionLogTimer = new Timer();
 		mSessionLogTimer.schedule(new TimerTask() {
@@ -97,7 +118,7 @@ class WorkSession {
 			
 		}, SESSION_LOG_TIMING, SESSION_LOG_TIMING);
 		
-		Log.d(TAG, "Work session started: localId=" + localId + 
+		Log.i(TAG, "Work session started: localId=" + localId + 
 		", uniqueId=" + uniqueId + ", startTime=" + startTime);
 	}
 	
@@ -105,7 +126,10 @@ class WorkSession {
 		if (null == mData)
 			throw new IllegalStateException("No work session is running");
 		
-		Log.d(TAG, "Stopping work session");
+		Log.i(TAG, "Stopping work session");
+		
+		// detach all listeners
+		mListeners.clear();
 		
 		// stop saving log entries
 		mSessionLogTimer.cancel();
@@ -137,13 +161,13 @@ class WorkSession {
 		
 		// done
 		mData = null;
-		Log.d(TAG, "Work session stopped");
+		Log.i(TAG, "Work session stopped");
 	}
     
     // stores all session data in DB, returns entity _ID
 	private long createMasterRecord(String uniqueId, Date startTime) {
-		Log.d(TAG, "Inserting session master record");
-		Log.d(TAG, "UniqueId=" + uniqueId + ", StartTime=" + startTime);
+		Log.i(TAG, "Inserting session master record");
+		Log.i(TAG, "UniqueId=" + uniqueId + ", StartTime=" + startTime);
 		ContentValues values = new ContentValues();
 		values.put(DiaryContract.COL_UUID, uniqueId);
 		values.put(DiaryContract.COL_START, startTime.getTime());
@@ -164,8 +188,8 @@ class WorkSession {
 	}
     
 	private long createLogRecord(Data data) {
-		Log.d(TAG, "Inserting session log record");
-		Log.d(TAG, mData.toString());
+		Log.i(TAG, "Inserting session log record");
+		Log.i(TAG, mData.toString());
 		ContentValues values = new ContentValues();
 		values.put(DiaryContract._ID, new Date().getTime());
 		values.put(DiaryContract.COL_WORKOUT, data.getLocalId());
@@ -180,8 +204,8 @@ class WorkSession {
 	}
 
 	private boolean updateMasterRecord(Data data) {
-		Log.d(TAG, "Updating session master record");
-		Log.d(TAG, mData.toString());
+		Log.i(TAG, "Updating session master record");
+		Log.i(TAG, mData.toString());
 		ContentValues values = new ContentValues();
 		values.put(DiaryContract.COL_END, data.getEndTime().getTime());
 		values.put(DiaryContract.COL_ELAPSED, data.getElapsedTime());

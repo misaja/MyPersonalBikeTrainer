@@ -2,8 +2,7 @@ package com.nimbusware.mypersonalbiketrainer.ble;
 
 import java.util.UUID;
 
-//import com.nimbusware.mypersonalbiketrainer.Globals;
-
+import com.nimbusware.mypersonalbiketrainer.Globals;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -52,9 +51,10 @@ public abstract class SingleValueSensor {
 
         // this may be called a LONG time after BluetoothDevice.connectGatt() is started
         // (e.g., 50s when the BLE device was in standby); if no BLE device is reachable at
-    	// the given address, however, it is called quite immediately
+    	// the given address, however, it is called quite immediately (5") or never at all
     	@Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+    		notifyListeners(status, newState);
         	if (status == BluetoothGatt.GATT_SUCCESS) {
 	        	synchronized (SingleValueSensor.this) {
 	                if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -70,15 +70,27 @@ public abstract class SingleValueSensor {
 	                        Log.w(TAG, "Cannot start service discovery of GATT server at " + mAddress);
 	                    }
 	                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-	                	mOperationPending = false;
-	                	mOpen = false;
+	                	// apparently, this never happens when we call close()
 	                    Log.i(TAG, "Disconnected from GATT server at " + mAddress);
 	                }
 				}
         	} else {
-        		// device unreachable
+        		// open() call failed
             	mOperationPending = false;
-                Log.w(TAG, "Connection to GATT server at " + mAddress + " failed");
+                Log.w(TAG, "Connection to GATT server at " + mAddress + " failed: STATUS=" + status + ", STATE=" + newState);
+                
+                // TODO
+                // Here status and newState are typically not one of the officially endorsed values
+                // (see BluetoothGatt.GATT_* and BluetoothProfile.STATE_* constants, respectively).
+                // In particular, the standard failure status should be BluetoothGatt.GATT_FAILURE, that is 0x0101,
+                // or 257 in decimal notation; however, it has been observed that when we try to connect to
+                // a sensor which is simply not there, the systems behaves in one of these two ways: A) this
+                // callback is never called, and the open() call simply gets lost somewhere in the native
+                // BLE stack; B) this callback is called with STATUS=133 and STATE=-2.
+                // Now the point is: is it reasonable to detect these situations and react by restarting the 
+                // connection all over again? The objective is making the application resilient: it will try to reach
+                // sensors that are STILL not there but might pop up online later AND will try to re-establish a
+                // CRASHED connection
         	}
         }
 
@@ -201,18 +213,51 @@ public abstract class SingleValueSensor {
 		}
 	}
 	
+	public synchronized boolean refresh() {
+		if (!mOperationPending) {
+			Log.i(TAG, "Refreshing Bluetooth device at " + mAddress);
+
+			// close
+			if (null != mServer) {
+		        Log.i(TAG, "Closing Bluetooth device at " + mAddress);
+				mOperationPending = false;
+				mOpen = false;
+				mServer.close();
+				mServer = null;
+			}
+			
+			// wait a few milliseconds to give BLE some time to clean up
+			// (don't know if this is actually needed, but let's play it safe)
+			Globals.waitBleServer();
+			
+			doClose(true); // this will NOT unregister the current listeners
+
+			// open
+			BluetoothDevice device = mAdapter.getRemoteDevice(mAddress);
+	    	mOperationPending = true;
+	        Log.i(TAG, "Connecting to GATT server at " + mAddress);
+	    	mServer = device.connectGatt(mContext, true, mCallback);
+	    	return true;
+		} else {
+			return false;
+		}
+	}
+	
 	public void close() {
-        Log.i(TAG, "Closing Bluetooth device at " + mAddress);
 		if (null != mServer) {
+	        Log.i(TAG, "Closing Bluetooth device at " + mAddress);
 			mOperationPending = false;
 			mOpen = false;
 			mServer.close();
 			mServer = null;
 		}
-		doClose();
+		
+		doClose(false); // this will unregister all the current listeners
 	}
+	
+	protected abstract void notifyListeners(int status, int newState);
 	
 	protected abstract void notifyListeners(BluetoothGattCharacteristic characteristic);
 	
-	protected abstract void doClose();
+	protected abstract void doClose(boolean isRefresh);
 }

@@ -1,6 +1,6 @@
 package com.nimbusware.mypersonalbiketrainer;
 
-public interface CadenceSensorListener {
+public interface CadenceSensorListener extends SensorListener {
 
 	public void updateCadence(double rpm);
 

@@ -66,11 +66,19 @@ public class SensorSet implements Sensor {
 		if (!mOperationPending && !mIsOpen) {
 			mOperationPending = true;
 			Opener opener = new Opener();
-			opener.execute((Void)null);
+			opener.execute(false);
 			return true;
 		} else {
 			return false;
 		}
+	}
+	
+	@Override
+	public synchronized boolean refresh() {
+		mOperationPending = true;
+		Opener opener = new Opener();
+		opener.execute(true);
+		return true;
 	}
 
 	@Override
@@ -91,24 +99,21 @@ public class SensorSet implements Sensor {
 		mOperationPending = false;
 	}
 	
-	private class Opener extends AsyncTask<Void, Void, Void> {
+	private class Opener extends AsyncTask<Boolean, Void, Void> {
 
 		@Override
-		protected Void doInBackground(Void... params) {
+		protected Void doInBackground(Boolean... params) {
 			synchronized (SensorSet.this) {
 				boolean open = false;
 				if (null != mHeartSensor && !mHeartSensor.isOpen()) {
-					boolean result = openSynchronously(mHeartSensor);
-					open = open || result;
+					open = open || doSynchronously(mHeartSensor, params[0]);
 				}
 				if (null != mWheelSensor && !mWheelSensor.isOpen()) {
-					boolean result = openSynchronously(mWheelSensor);
-					open = open || result;
+					open = open || doSynchronously(mWheelSensor, params[0]);
 				}
 				// wheel and crank may be (and usually are) monitored by the same sensor
 				if (null != mCrankSensor && mCrankSensor != mWheelSensor && !mCrankSensor.isOpen()) {
-					boolean result = openSynchronously(mCrankSensor);
-					open = open || result;
+					open = open || doSynchronously(mCrankSensor, params[0]);
 				}
 				
 				// for us to be in "open" state, at least one sensor should be so
@@ -118,13 +123,18 @@ public class SensorSet implements Sensor {
 			return null;
 		}
 		
-		private boolean openSynchronously(Sensor sensor) {
+		private boolean doSynchronously(Sensor sensor, boolean isRefresh) {
 			boolean open = false;
 			
-			// spend max 100 seconds waiting for a working device
-			// before trying to open the next one
-			sensor.open();
-			for (int i = 1000; i > 0; i--) {
+			if (isRefresh) {
+				sensor.refresh();
+			} else {
+				sensor.open();
+			}
+			
+			// spend max 10 seconds waiting for a working device
+			// before trying to open/refresh the next one
+			for (int i = 100; i > 0; i--) {
 				try {
 					Thread.sleep(100);
 				} catch (InterruptedException e) {

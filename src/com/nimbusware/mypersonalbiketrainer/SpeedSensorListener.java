@@ -1,6 +1,6 @@
 package com.nimbusware.mypersonalbiketrainer;
 
-public interface SpeedSensorListener {
+public interface SpeedSensorListener extends SensorListener {
 
 	public void updateSpeed(double kmh);
 

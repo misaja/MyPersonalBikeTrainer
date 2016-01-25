@@ -509,5 +509,10 @@ class WorkSession {
 			double minutesElapsed = millisecondsElapsed / 60000;
 			return upm * minutesElapsed;
 		}
+
+		@Override
+		public void updateConnectionState(int status, int newState) {
+			// nothing to do here
+		}
 	}
 }

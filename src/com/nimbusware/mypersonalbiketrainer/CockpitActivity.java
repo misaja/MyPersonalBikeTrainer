@@ -120,6 +120,18 @@ public class CockpitActivity extends Activity {
 		public void updateWheelRevsCount(int revs) {
 			// nothing to do: we don't have any use for this info here
 		}
+
+		@Override
+		public void updateConnectionState(final int status, final int newState) {
+			CockpitActivity.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(CockpitActivity.this, 
+							"Speed sensor connection state: " + status + " - " + newState, 
+							Toast.LENGTH_SHORT).show();
+				}
+			});
+		}
 	};
 	
 	// listener for the crank sensor, if any
@@ -147,6 +159,18 @@ public class CockpitActivity extends Activity {
 		public void updateCrankRevsCount(int revs) {
 			// nothing to do: we don't have any use for this info here
 		}
+
+		@Override
+		public void updateConnectionState(final int status, final int newState) {
+			CockpitActivity.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(CockpitActivity.this, 
+							"Cadence sensor connection state: " + status + " - " + newState, 
+							Toast.LENGTH_SHORT).show();
+				}
+			});
+		}
 	};
 	
 	// listener for the heart sensor, if any
@@ -165,6 +189,18 @@ public class CockpitActivity extends Activity {
 					
 					// truncate the value into an integer
 					mViewCardio.setText(String.format("%d", (int) bpm));
+				}
+			});
+		}
+
+		@Override
+		public void updateConnectionState(final int status, final int newState) {
+			CockpitActivity.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					Toast.makeText(CockpitActivity.this, 
+							"Heart sensor connection state: " + status + " - " + newState, 
+							Toast.LENGTH_SHORT).show();
 				}
 			});
 		}
@@ -348,8 +384,7 @@ public class CockpitActivity extends Activity {
 				break;
 			case R.id.action_refresh:
 				if (null != mSensorService) {
-					mSensorService.restartSensors();
-					mSensorService.registerSensorListeners(mHeartListener, mWheelListener, mCrankListener);
+					mSensorService.refreshSensors();
 				}
 				break;
 		}
@@ -515,6 +550,10 @@ public class CockpitActivity extends Activity {
 						
 						// is any sensor is inactive, reset the UI accordingly
 						syncGauges();
+						
+						// TODO
+						// does it make sense trying to reset the BLE connections
+						// when we detect timeouts?
 						
 						// if the sensor service is connected, the activity is currently
 						// in the foreground: we need to reschedule this task

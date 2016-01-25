@@ -38,6 +38,13 @@ public class HrmSensor extends SingleValueSensor implements BeatRateSensor {
 	}
 
 	@Override
+	protected void notifyListeners(int status, int newState) {
+	    for (BeatRateSensorListener listener : mListeners) {
+	    	listener.updateConnectionState(status, newState);
+	    }
+	}
+
+	@Override
 	protected void notifyListeners(BluetoothGattCharacteristic characteristic) {
 		int flag = characteristic.getProperties();
 		int format = -1;
@@ -58,7 +65,9 @@ public class HrmSensor extends SingleValueSensor implements BeatRateSensor {
 	}
 
 	@Override
-	protected void doClose() {
-		mListeners.clear();
+	protected void doClose(boolean isRefresh) {
+		if (!isRefresh) {
+			mListeners.clear();
+		}
 	}
 }

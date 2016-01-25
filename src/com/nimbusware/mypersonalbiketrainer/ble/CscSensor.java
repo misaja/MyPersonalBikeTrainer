@@ -67,6 +67,20 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 		mCadenceListeners.remove(listener);
 	}
 
+	@Override
+	protected void notifyListeners(int status, int newState) {
+	    for (CadenceSensorListener listener : mCadenceListeners) {
+	    	listener.updateConnectionState(status, newState);
+	    }
+	    for (SpeedSensorListener listener : mSpeedListeners) {
+		    // if we have the same listener in both collections, we
+		    // must avoid sending duplicate notifications
+	    	if (!mCadenceListeners.contains(listener)) {
+	    		listener.updateConnectionState(status, newState);
+	    	}
+	    }
+	}
+
 	protected void notifyListeners(BluetoothGattCharacteristic characteristic) {
 		final byte[] data = characteristic.getValue();
 		if (data != null && data.length > 0) {
@@ -157,9 +171,11 @@ public class CscSensor extends SingleValueSensor implements SpeedSensor, Cadence
 	}
 
 	@Override
-	protected void doClose() {
-		mSpeedListeners.clear();
-		mCadenceListeners.clear();
-		mLastCSCReading = null;
+	protected void doClose(boolean isRefresh) {
+		if (!isRefresh) {
+			mSpeedListeners.clear();
+			mCadenceListeners.clear();
+			mLastCSCReading = null;
+		}
 	}
 }

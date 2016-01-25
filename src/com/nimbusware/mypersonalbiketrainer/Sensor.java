@@ -8,5 +8,7 @@ public interface Sensor {
 	
 	public boolean open();
 	
+	public boolean refresh();
+	
 	public void close();
 }

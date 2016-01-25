@@ -35,14 +35,11 @@ public class WorkSessionService extends Service {
 	private String mWheelSensorAddr;
 	private String mCrankSensorAddr;
 	
-	public void restartSensors() {
-		if (null != mSensors) {
-			Log.i(TAG, "Closing sensors");
-			mSensors.close(); // this also removes all previous listeners
-			mSensors = null;
-		}
-
-		initSensors();
+	public void refreshSensors() {
+		// this will span connection attempts in the background
+		Log.i(TAG, "Refreshing sensors");
+		mSensors.refresh();
+		Log.i(TAG, "Sensor opening requested, waiting for reply");
 	}
 
 	public void registerSensorListeners(BeatRateSensorListener bsl,
@@ -161,8 +158,7 @@ public class WorkSessionService extends Service {
 			mSession.stop();
 		}
 		if (null != mSensors) {
-			// if we already have sensors, it's a refresh request
-			mSensors.close(); // this also removes all previous listeners
+			mSensors.close();
 			mSensors = null;
 		}
 	}
@@ -202,5 +198,6 @@ public class WorkSessionService extends Service {
 		// this will span connection attempts in the background
 		Log.i(TAG, "Opening sensors");
 		mSensors.open();
+		Log.i(TAG, "Sensor opening requested, waiting for reply");
 	}
 }

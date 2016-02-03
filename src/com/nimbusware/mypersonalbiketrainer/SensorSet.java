@@ -74,7 +74,7 @@ public class SensorSet implements Sensor {
 	}
 	
 	@Override
-	public synchronized boolean refresh() {
+	public synchronized boolean reopen() {
 		mOperationPending = true;
 		Opener opener = new Opener();
 		opener.execute(true);
@@ -127,7 +127,7 @@ public class SensorSet implements Sensor {
 			boolean open = false;
 			
 			if (isRefresh) {
-				sensor.refresh();
+				sensor.reopen();
 			} else {
 				sensor.open();
 			}

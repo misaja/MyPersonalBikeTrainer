@@ -38,7 +38,7 @@ public class WorkSessionService extends Service {
 	public void refreshSensors() {
 		// this will span connection attempts in the background
 		Log.i(TAG, "Refreshing sensors");
-		mSensors.refresh();
+		mSensors.reopen();
 		Log.i(TAG, "Sensor opening requested, waiting for reply");
 	}
 

@@ -76,8 +76,11 @@ public abstract class SingleValueSensor {
 				}
         	} else {
         		// open() call failed
+                mServer.disconnect();
+                
             	mOperationPending = false;
                 Log.w(TAG, "Connection to GATT server at " + mAddress + " failed: STATUS=" + status + ", STATE=" + newState);
+                
                 
                 // TODO
                 // Here status and newState are typically not one of the officially endorsed values
@@ -203,6 +206,7 @@ public abstract class SingleValueSensor {
 	public synchronized boolean open() {
 		if (!mOperationPending) {
 	        Log.i(TAG, "Opening Bluetooth device at " + mAddress);
+	        mAdapter.cancelDiscovery();
 	        BluetoothDevice device = mAdapter.getRemoteDevice(mAddress);
 	    	mOperationPending = true;
 	        Log.i(TAG, "Connecting to GATT server at " + mAddress);
@@ -213,7 +217,7 @@ public abstract class SingleValueSensor {
 		}
 	}
 	
-	public synchronized boolean refresh() {
+	public synchronized boolean reopen() {
 		if (!mOperationPending) {
 			Log.i(TAG, "Refreshing Bluetooth device at " + mAddress);
 
@@ -233,6 +237,7 @@ public abstract class SingleValueSensor {
 			doClose(true); // this will NOT unregister the current listeners
 
 			// open
+	        mAdapter.cancelDiscovery();
 			BluetoothDevice device = mAdapter.getRemoteDevice(mAddress);
 	    	mOperationPending = true;
 	        Log.i(TAG, "Connecting to GATT server at " + mAddress);

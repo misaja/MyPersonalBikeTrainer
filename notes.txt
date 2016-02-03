@@ -1,0 +1,1 @@
+LogCat filter for BLE activity - tag:(bt-|Gatt|SingleValue)
